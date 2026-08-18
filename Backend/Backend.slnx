@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="Petuno.Api/Petuno.Api.csproj" />
+  <Project Path="Petuno.Application/Petuno.Application.csproj" />
+  <Project Path="Petuno.Core/Petuno.Core.csproj" />
+  <Project Path="Petuno.Infrastructure/Petuno.Infrastructure.csproj" />
+</Solution>
