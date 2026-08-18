@@ -1,0 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+@import "tailwindcss";
+
+@config "../tailwind.config.js";
+
+
+@layer base {
+  body {
+    @apply bg-petuno-background text-petuno-text font-sans antialiased transition-colors duration-200;
+  }
+  
+  .dark body {
+    @apply bg-dark-background text-dark-text;
+  }
+}

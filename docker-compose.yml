@@ -1,0 +1,274 @@
+name: petuno
+
+services:
+
+  # ============================================================================
+  # 🚦 Reverse Proxy - Traefik
+  # ============================================================================
+  traefik:
+    image: traefik:latest
+    container_name: petuno-traefik
+
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+
+    ports:
+      - "${TRAEFIK_PORT}:80"
+      - "${TRAEFIK_DASHBOARD_PORT}:8080"
+
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+  # ============================================================================
+  # 🗄️ PostgreSQL + PostGIS
+  # ============================================================================
+  postgres:
+    image: postgis/postgis:latest
+    container_name: petuno-postgres
+
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+
+    ports:
+      - "${POSTGRES_PORT}:5432"
+
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+  # ============================================================================
+  # ⚡ Valkey - Cache / Locks / Temporary Data
+  # ============================================================================
+  valkey:
+    image: valkey/valkey:latest
+    container_name: petuno-valkey
+
+    ports:
+      - "${VALKEY_PORT}:6379"
+
+    volumes:
+      - valkey-data:/data
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+  # ============================================================================
+  # 📦 MinIO - Object Storage
+  # ============================================================================
+  minio:
+    image: minio/minio:latest
+    container_name: petuno-minio
+
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+
+    ports:
+      - "${MINIO_PORT}:9000"
+      - "${MINIO_CONSOLE_PORT}:9001"
+
+    command:
+      - server
+      - /data
+      - --console-address
+      - ":9001"
+
+    volumes:
+      - minio-data:/data
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+  # ============================================================================
+  # 📨 Apache Kafka - Event Streaming
+  # ============================================================================
+  kafka:
+    image: apache/kafka:latest
+    container_name: petuno-kafka
+
+    ports:
+      - "${KAFKA_PORT}:9092"
+
+    environment:
+
+      # ------------------------------------------------------------------------
+      # KRaft
+      # ------------------------------------------------------------------------
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+
+      # ------------------------------------------------------------------------
+      # Listeners
+      #
+      # INTERNAL  -> comunicación entre contenedores
+      # EXTERNAL  -> comunicación desde Windows
+      # CONTROLLER -> KRaft controller
+      # ------------------------------------------------------------------------
+      KAFKA_LISTENERS: INTERNAL://:29092,EXTERNAL://:9092,CONTROLLER://:9093
+
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:${KAFKA_PORT}
+
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT,CONTROLLER:PLAINTEXT
+
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+
+      # ------------------------------------------------------------------------
+      # Storage
+      # ------------------------------------------------------------------------
+      KAFKA_LOG_DIRS: /tmp/kraft-combined-logs
+
+      # ------------------------------------------------------------------------
+      # Single-node development configuration
+      # ------------------------------------------------------------------------
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+  # ============================================================================
+  # 📊 Kafka UI - Monitoring
+  # ============================================================================
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: petuno-kafka-ui
+
+    ports:
+      - "${KAFKA_UI_PORT}:8080"
+
+    environment:
+      DYNAMIC_CONFIG_ENABLED: "true"
+
+      KAFKA_CLUSTERS_0_NAME: petuno-cluster
+
+      # IMPORTANTE:
+      # Kafka UI está dentro de Docker, por eso utiliza
+      # kafka:29092 y NO localhost:9092.
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+
+    depends_on:
+      - kafka
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+  # ============================================================================
+  # 🔐 OpenBao - Secrets Management
+  # ============================================================================
+  #
+  # IMPORTANTE:
+  # Esto es SOLO para desarrollo.
+  #
+  # OpenBao Dev Mode:
+  # - memoria
+  # - inicializado automáticamente
+  # - unsealed automáticamente
+  # - NO utilizar en producción
+  #
+  # ============================================================================
+  openbao:
+    image: openbao/openbao:latest
+    container_name: petuno-openbao
+
+    ports:
+      - "${OPENBAO_PORT}:8200"
+
+    environment:
+      BAO_DEV_ROOT_TOKEN_ID: ${OPENBAO_ROOT_TOKEN}
+      BAO_DEV_LISTEN_ADDRESS: "0.0.0.0:8200"
+
+    command:
+      - server
+      - -dev
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+  # ============================================================================
+  # 📡 Mosquitto - MQTT / IoT
+  # ============================================================================
+  mosquitto:
+    image: eclipse-mosquitto:latest
+    container_name: petuno-mosquitto
+
+    ports:
+      - "${MOSQUITTO_MQTT_PORT}:1883"
+      - "${MOSQUITTO_WS_PORT}:9002"
+
+    volumes:
+      - mosquitto-data:/mosquitto/data
+      - mosquitto-log:/mosquitto/log
+
+    restart: unless-stopped
+
+    networks:
+      - petuno-network
+
+
+# ==============================================================================
+# NETWORK
+# ==============================================================================
+
+networks:
+  petuno-network:
+    driver: bridge
+
+
+# ==============================================================================
+# VOLUMES
+# ==============================================================================
+
+volumes:
+
+  postgres-data:
+    driver: local
+
+  valkey-data:
+    driver: local
+
+  minio-data:
+    driver: local
+
+  mosquitto-data:
+    driver: local
+
+  mosquitto-log:
+    driver: local
