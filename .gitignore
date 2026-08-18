@@ -1,1 +1,11 @@
 /*.env
+/Backend/Petuno.Api/bin
+/Backend/Petuno.Api/obj
+/Backend/Petuno.Application/bin
+/Backend/Petuno.Application/obj
+/Backend/Petuno.Core/bin
+/Backend/Petuno.Core/obj
+/Backend/Petuno.Infrastructure/bin
+/Backend/Petuno.Infrastructure/obj
+/Backend/.vs
+/Frontend/.env
