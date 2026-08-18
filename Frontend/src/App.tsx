@@ -36,6 +36,7 @@ interface Pet {
   isMine?: boolean;
   hasGps?: boolean;
   city?: string;
+  lastSeenLocation?: string;
 }
 
 interface Sighting {
@@ -70,6 +71,15 @@ interface CommunityPost {
   commentsCount: number;
   timestamp: string;
   likedByUser?: boolean;
+}
+
+interface NotificationItem {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  read: boolean;
+  type: 'Vacunas' | 'Medicamentos' | 'GPS' | 'Alertas' | 'Dispositivos' | 'Sistema';
 }
 
 interface Device {
@@ -242,33 +252,56 @@ function Header({
   isDarkMode, 
   toggleTheme, 
   user, 
-  onLogout 
+  onLogout,
+  onOpenScanner,
+  onOpenDonations
 }: { 
   isDarkMode: boolean; 
   toggleTheme: () => void; 
   user: { name: string } | null;
   onLogout: () => void;
+  onOpenScanner?: () => void;
+  onOpenDonations?: () => void;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    if (window.location.pathname === '/') {
+      e.preventDefault();
+      const element = document.getElementById(targetId);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
 
   return (
     <header className="fixed top-0 w-full bg-petuno-surface dark:bg-dark-surface z-50 transition-colors border-b border-petuno-border dark:border-petuno-secondary-text/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
           <div className="flex items-center gap-2">
-            <Link to="/" className="flex items-center gap-2 text-petuno-text dark:text-dark-text font-bold text-2xl tracking-tight">
+            <Link to="/" onClick={(e) => handleNavClick(e, 'home-top')} className="flex items-center gap-2 text-petuno-text dark:text-dark-text font-bold text-2xl tracking-tight">
               <PawPrint className="w-8 h-8 text-petuno-purple dark:text-petuno-purple-light" fill="currentColor" />
               petuno
             </Link>
           </div>
           
           <nav className="hidden lg:flex space-x-8 items-center font-medium">
-            <Link to="/" className="text-sm text-petuno-purple dark:text-petuno-purple-light">Inicio</Link>
-            <Link to="/mascotas" className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors">Mascotas</Link>
-            <Link to="/perdidas" className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors">Perdidas</Link>
-            <Link to="/adopciones" className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors">Adopciones</Link>
-            <Link to="/servicios" className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors">Servicios</Link>
-            <Link to="/blog" className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors">Blog</Link>
+            <Link to="/" onClick={(e) => handleNavClick(e, 'home-top')} className="text-sm text-petuno-purple dark:text-petuno-purple-light">Inicio</Link>
+            <Link to="/#map-section" onClick={(e) => handleNavClick(e, 'map-section')} className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors">Buscar Mascota</Link>
+            <Link to="/adopcion" className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors">Adopción</Link>
+            <button 
+              onClick={() => onOpenDonations?.()} 
+              className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors font-semibold"
+            >
+              Donaciones
+            </button>
+            <button 
+              onClick={() => onOpenScanner?.()} 
+              className="text-sm text-petuno-text hover:text-petuno-purple dark:text-dark-text dark:hover:text-petuno-purple-light transition-colors font-semibold"
+            >
+              Escanear Placa
+            </button>
           </nav>
 
           <div className="hidden lg:flex items-center gap-4">
@@ -308,22 +341,32 @@ function Header({
 
       {isMobileMenuOpen && (
         <div className="lg:hidden bg-petuno-surface dark:bg-dark-surface border-b border-petuno-border dark:border-petuno-secondary-text/30">
-          <div className="px-4 pt-2 pb-4 space-y-1">
-            <Link to="/" className="block px-3 py-2 rounded-md text-base font-medium text-petuno-purple">Inicio</Link>
-            <Link to="/mascotas" className="block px-3 py-2 rounded-md text-base font-medium text-petuno-text dark:text-dark-text">Mascotas</Link>
-            <Link to="/perdidas" className="block px-3 py-2 rounded-md text-base font-medium text-petuno-text dark:text-dark-text">Perdidas</Link>
-            <Link to="/adopciones" className="block px-3 py-2 rounded-md text-base font-medium text-petuno-text dark:text-dark-text">Adopciones</Link>
-            <Link to="/servicios" className="block px-3 py-2 rounded-md text-base font-medium text-petuno-text dark:text-dark-text">Servicios</Link>
+          <div className="px-4 pt-2 pb-4 space-y-1 font-semibold text-left">
+            <Link to="/" onClick={(e) => { handleNavClick(e, 'home-top'); setIsMobileMenuOpen(false); }} className="block px-3 py-2 rounded-md text-base font-semibold text-petuno-purple">Inicio</Link>
+            <Link to="/#map-section" onClick={(e) => { handleNavClick(e, 'map-section'); setIsMobileMenuOpen(false); }} className="block px-3 py-2 rounded-md text-base text-petuno-text dark:text-dark-text">Buscar Mascota</Link>
+            <Link to="/adopcion" onClick={() => setIsMobileMenuOpen(false)} className="block px-3 py-2 rounded-md text-base text-petuno-text dark:text-dark-text">Adopción</Link>
+            <button 
+              onClick={() => { onOpenDonations?.(); setIsMobileMenuOpen(false); }} 
+              className="block w-full text-left px-3 py-2 rounded-md text-base text-petuno-text dark:text-dark-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated transition-all"
+            >
+              Donaciones
+            </button>
+            <button 
+              onClick={() => { onOpenScanner?.(); setIsMobileMenuOpen(false); }} 
+              className="block w-full text-left px-3 py-2 rounded-md text-base text-petuno-text dark:text-dark-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated transition-all"
+            >
+              Escanear Placa
+            </button>
             <div className="pt-4 flex flex-col gap-2">
               {user ? (
                 <>
-                  <Link to="/app" className="block text-center px-3 py-2 rounded-lg bg-petuno-purple-50 dark:bg-dark-surface-elevated text-base font-medium text-petuno-purple">Mi Panel</Link>
-                  <button onClick={onLogout} className="block text-center px-3 py-2 rounded-lg bg-petuno-coral-light text-petuno-coral text-base font-medium">Salir</button>
+                  <Link to="/app" className="block text-center px-3 py-2 rounded-lg bg-petuno-purple-50 dark:bg-dark-surface-elevated text-base text-petuno-purple">Mi Panel</Link>
+                  <button onClick={onLogout} className="block text-center px-3 py-2 rounded-lg bg-petuno-coral-light text-petuno-coral text-base">Salir</button>
                 </>
               ) : (
                 <>
-                  <Link to="/login" className="block text-center px-3 py-2 rounded-lg border border-petuno-border dark:border-petuno-secondary-text text-base font-medium text-petuno-text dark:text-dark-text">Iniciar sesión</Link>
-                  <Link to="/register" className="block text-center px-3 py-2 rounded-lg bg-petuno-purple text-white text-base font-medium">Registrarse</Link>
+                  <Link to="/login" className="block text-center px-3 py-2 rounded-lg border border-petuno-border dark:border-petuno-secondary-text text-base text-petuno-text dark:text-dark-text">Iniciar sesión</Link>
+                  <Link to="/register" className="block text-center px-3 py-2 rounded-lg bg-petuno-purple text-white text-base">Registrarse</Link>
                 </>
               )}
             </div>
@@ -334,32 +377,111 @@ function Header({
   );
 }
 
+function AdoptablePetCard({ 
+  name, 
+  breed, 
+  age, 
+  photo, 
+  tag, 
+  isSpecialNeeds 
+}: { 
+  name: string; 
+  breed: string; 
+  age: string; 
+  photo: string; 
+  tag: string; 
+  isSpecialNeeds?: boolean;
+}) {
+  return (
+    <div className="bg-petuno-background dark:bg-dark-surface-elevated rounded-2xl overflow-hidden border border-petuno-border dark:border-transparent flex flex-col h-full group text-left">
+      <div className="relative h-44 w-full overflow-hidden bg-petuno-purple-50">
+        <img 
+          src={photo} 
+          alt={name} 
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+        />
+        {isSpecialNeeds && (
+          <span className="absolute top-3 left-3 bg-petuno-coral text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full uppercase tracking-wider">
+            Especial
+          </span>
+        )}
+      </div>
+      <div className="p-4 flex-1 flex flex-col justify-between">
+        <div>
+          <span className="text-[9px] font-extrabold text-petuno-purple uppercase tracking-wider block">{breed}</span>
+          <h4 className="font-extrabold text-sm text-petuno-text dark:text-dark-text mt-0.5">{name} ({age})</h4>
+          <p className="text-[10px] text-petuno-secondary-text mt-1 italic">"{tag}"</p>
+        </div>
+        <Link 
+          to="/register" 
+          className="mt-4 w-full bg-petuno-purple text-white text-center py-2 rounded-xl text-xs font-bold transition-all hover:bg-petuno-purple-dark block"
+        >
+          Postular Adopción
+        </Link>
+      </div>
+    </div>
+  );
+}
+
 // ============================================================================
 // LANDING PAGE (Home)
 // ============================================================================
 
-function Home() {
+function Home({ 
+  onOpenScanner
+}: { 
+  onOpenScanner?: () => void; 
+  onOpenDonations?: () => void;
+}) {
+  const [selectedSosCategory, setSelectedSosCategory] = useState<string>('Todas');
+  const [selectedMapFilter, setSelectedMapFilter] = useState<string>('Todas');
+  const [selectedMapMarker, setSelectedMapMarker] = useState<any | null>(null);
+
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash) {
+      const element = document.getElementById(hash.substring(1));
+      if (element) {
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
+      }
+    }
+  }, []);
+
   return (
-    <div className="flex flex-col min-h-screen bg-petuno-background dark:bg-dark-background font-sans pt-20">
+    <div id="home-top" className="flex flex-col min-h-screen bg-petuno-background dark:bg-dark-background font-sans pt-20">
       
       {/* Hero Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 flex flex-col lg:flex-row items-center gap-12">
         <div className="lg:w-1/2 flex flex-col items-start text-left space-y-6">
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-petuno-text dark:text-dark-text tracking-tight leading-[1.1]">
-            Todo lo que tu mascota <br className="hidden lg:block"/>
-            <span className="text-petuno-purple dark:text-petuno-purple-light">necesita, en un solo lugar</span>
+            La identidad digital <br className="hidden lg:block"/>
+            <span className="text-petuno-purple dark:text-petuno-purple-light">de tu mascota.</span>
           </h1>
           <p className="text-lg text-petuno-secondary-text dark:text-dark-secondary-text max-w-lg">
-            Petuno te ayuda a proteger, cuidar y conectar con lo más importante de tu vida.
+            Protégela. Encuéntrala. Cuídala. Mantén toda su identificación física y su historial de bienestar conectados en un solo lugar.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 pt-4 w-full sm:w-auto">
             <Link to="/register" className="bg-petuno-purple hover:bg-petuno-purple-dark text-white px-6 py-3.5 rounded-xl text-base font-semibold transition-all shadow-md flex items-center justify-center gap-2">
-              <PawPrint className="w-5 h-5" fill="currentColor" />
-              Crear perfil de mi mascota
+              🐾 Registrar mascota
             </Link>
-            <Link to="/scan" className="bg-transparent text-petuno-text dark:text-dark-text border border-petuno-border dark:border-petuno-secondary-text/50 hover:bg-petuno-border/50 dark:hover:bg-dark-surface-elevated px-6 py-3.5 rounded-xl text-base font-semibold transition-all flex items-center justify-center">
-              Escanear QR
-            </Link>
+            <a 
+              href="#map-section" 
+              onClick={(e) => {
+                e.preventDefault();
+                document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth' });
+              }}
+              className="bg-transparent text-petuno-text dark:text-dark-text border border-petuno-border dark:border-petuno-secondary-text/50 hover:bg-petuno-border/50 dark:hover:bg-dark-surface-elevated px-6 py-3.5 rounded-xl text-base font-semibold transition-all flex items-center justify-center gap-2"
+            >
+              🔎 Buscar mascota
+            </a>
+            <button 
+              onClick={() => onOpenScanner?.()} 
+              className="bg-petuno-coral hover:bg-petuno-coral/95 text-white px-6 py-3.5 rounded-xl text-base font-semibold transition-all shadow-md flex items-center justify-center gap-2"
+            >
+              📷 Escanear QR
+            </button>
           </div>
         </div>
         
@@ -420,6 +542,281 @@ function Home() {
         </div>
       </section>
 
+      {/* SOS Búsqueda y Rescate Section */}
+      <section id="sos-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full text-left">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 border-b border-petuno-border/40 pb-4">
+          <div>
+            <span className="bg-petuno-coral/10 text-petuno-coral text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider block w-max mb-2">
+              🚨 PETUNO SOS
+            </span>
+            <h2 className="text-2xl font-bold text-petuno-text dark:text-dark-text flex items-center gap-2">
+              Consola de Emergencia Permanente
+            </h2>
+            <p className="text-sm text-petuno-secondary-text mt-2 max-w-xl">
+              Filtra y consulta incidentes activos que ponen en riesgo o afectan el bienestar de los animales domésticos.
+            </p>
+          </div>
+          <Link 
+            to="/register" 
+            className="bg-petuno-coral hover:bg-petuno-coral/95 text-white font-bold px-5 py-3 rounded-xl text-xs transition-all shadow-md mt-4 md:mt-0"
+          >
+            Reportar Incidente SOS
+          </Link>
+        </div>
+
+        {/* Categories Selector */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {['Todas', 'Desastre natural', 'Incendio', 'Inundación', 'Mascotas perdidas', 'Evacuación', 'Animales encontrados', 'Emergencia veterinaria'].map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedSosCategory(cat)}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                selectedSosCategory === cat
+                  ? 'bg-petuno-purple border-petuno-purple text-white shadow-sm'
+                  : 'bg-white dark:bg-dark-surface border-petuno-border dark:border-petuno-secondary-text/20 text-petuno-secondary-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated'
+              }`}
+            >
+              {cat === 'Todas' ? '🚨 Todos los Reportes' : cat}
+            </button>
+          ))}
+        </div>
+
+        {/* SOS Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {[
+            { id: '1', title: 'Toby', category: 'Mascotas perdidas', breed: 'Golden Retriever', desc: 'Golden Retriever macho. Se asustó con el temblor y huyó.', location: '📍 Parque de la 93, Bogotá', status: 'Perdido', image: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=600&auto=format&fit=crop', contact: 'John Rueda' },
+            { id: '2', title: 'Michi', category: 'Mascotas perdidas', breed: 'Común Europeo', desc: 'Gato Siamés mix, collar rojo con chapa. Huyó por tejados.', location: '📍 Chapinero Alto, Bogotá', status: 'Perdido', image: 'https://images.unsplash.com/photo-1533738363-b7f9aef128ce?q=80&w=600&auto=format&fit=crop', contact: 'Diana Gomez' },
+            { id: '3', title: 'Perro Criollo Rescatado', category: 'Animales encontrados', breed: 'Criollo', desc: 'Encontrado temblando cerca a zona de derrumbe. Muy asustado.', location: '📍 Sopó (Albergue Temporal)', status: 'Encontrado', image: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=600&auto=format&fit=crop', contact: 'Bomberos Sopó' },
+            { id: '4', title: 'Evacuación Albergue', category: 'Evacuación', breed: 'Múltiples Mascotas', desc: 'Inundación inminente requiere traslado urgente de 45 perritos.', location: '📍 La Calera, Cundinamarca', status: 'Urgente', image: 'https://images.unsplash.com/photo-1444212477490-ca407925329e?q=80&w=600&auto=format&fit=crop', contact: 'Fundación Herradura' },
+            { id: '5', title: 'Bruno', category: 'Mascotas perdidas', breed: 'Labrador Retriever', desc: 'Labrador café muy dócil. Responde al silbido.', location: '📍 El Chicó, Bogotá', status: 'Perdido', image: 'https://images.unsplash.com/photo-1552053831-71594a27632d?q=80&w=600&auto=format&fit=crop', contact: 'Defensa Civil' }
+          ]
+            .filter(item => selectedSosCategory === 'Todas' || item.category === selectedSosCategory)
+            .map(item => (
+              <div key={item.id} className="bg-white dark:bg-dark-surface rounded-2xl overflow-hidden border border-petuno-border dark:border-petuno-secondary-text/15 shadow-sm flex flex-col justify-between text-left transition-all hover:shadow-md">
+                <div className="relative h-48 w-full bg-petuno-purple-50 dark:bg-dark-surface-elevated">
+                  <img 
+                    src={item.image} 
+                    alt={item.title} 
+                    className="w-full h-full object-cover" 
+                  />
+                  <span className={`absolute top-3 left-3 text-white text-[9px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider ${
+                    item.status === 'Perdido' ? 'bg-petuno-coral' : 'bg-petuno-mint'
+                  }`}>
+                    {item.status}
+                  </span>
+                  <span className="absolute bottom-3 right-3 bg-black/70 backdrop-blur-sm text-white text-[8px] font-bold px-2 py-0.5 rounded-md">
+                    {item.category}
+                  </span>
+                </div>
+                <div className="p-4 flex-1 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[9px] font-extrabold text-petuno-purple dark:text-petuno-purple-light uppercase tracking-wider block">{item.breed}</span>
+                    <h4 className="font-extrabold text-sm text-petuno-text dark:text-dark-text mt-0.5">{item.title}</h4>
+                    <p className="text-[10px] text-petuno-secondary-text dark:text-dark-secondary-text mt-1.5 leading-relaxed">
+                      {item.desc}
+                    </p>
+                    <p className="text-[10px] font-semibold text-petuno-text dark:text-dark-text mt-2">
+                      {item.location}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => alert(`Reportando información sobre ${item.title}... Su reporte ha sido enviado de forma anónima a ${item.contact}.`)}
+                    className={`mt-4 w-full text-center py-2.5 rounded-xl text-xs font-bold transition-all block ${
+                      item.status === 'Perdido' 
+                        ? 'bg-petuno-coral hover:bg-petuno-coral/90 text-white shadow-sm'
+                        : 'bg-petuno-mint hover:bg-petuno-mint-dark text-white shadow-sm'
+                    }`}
+                  >
+                    {item.status === 'Perdido' ? 'Tengo información' : 'Es mi mascota'}
+                  </button>
+                </div>
+              </div>
+            ))}
+        </div>
+      </section>
+
+      {/* 🗺️ MAPA VIVO PETUNO SECTION */}
+      <section id="map-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full text-left border-t border-petuno-border/30 dark:border-petuno-secondary-text/10">
+        <div className="mb-8">
+          <span className="bg-petuno-purple/10 text-petuno-purple dark:text-petuno-purple-light text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider block w-max mb-2">
+            🗺️ MAPA PETUNO
+          </span>
+          <h2 className="text-2xl font-bold text-petuno-text dark:text-dark-text flex items-center gap-2">
+            Red de Ayuda y Avistamientos en Vivo
+          </h2>
+          <p className="text-sm text-petuno-secondary-text dark:text-dark-secondary-text mt-2 max-w-xl">
+            Monitorea geolocalizaciones en tiempo real. Utiliza los filtros para ubicar albergues, veterinarias de turno y reportes activos.
+          </p>
+        </div>
+
+        {/* Map Filter Pills */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {['Todas', 'Perdida', 'Encontrada', 'Refugios', 'Veterinarias'].map(filter => (
+            <button
+              key={filter}
+              onClick={() => {
+                setSelectedMapFilter(filter);
+                setSelectedMapMarker(null);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-semibold border transition-all ${
+                selectedMapFilter === filter
+                  ? 'bg-petuno-purple border-petuno-purple text-white shadow-sm'
+                  : 'bg-white dark:bg-dark-surface border-petuno-border dark:border-petuno-secondary-text/20 text-petuno-secondary-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated'
+              }`}
+            >
+              {filter === 'Todas' ? '🌍 Mostrar Todo' : filter === 'Perdida' ? '🔴 Reportes Perdidos' : filter === 'Encontrada' ? '🟢 Reportes Encontrados' : filter === 'Refugios' ? '🏠 Refugios/Fundaciones' : '🏥 Veterinarias 24h'}
+            </button>
+          ))}
+        </div>
+
+        {/* Stylized Map Mockup Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+          {/* Map canvas container */}
+          <div className="lg:col-span-2 bg-slate-100 dark:bg-neutral-900 border border-petuno-border dark:border-petuno-secondary-text/15 rounded-3xl h-[450px] relative overflow-hidden shadow-inner flex items-center justify-center">
+            
+            {/* Grid Map Background */}
+            <div className="absolute inset-0 opacity-[0.08] dark:opacity-[0.04] bg-[radial-gradient(#000_1px,transparent_1px)] dark:bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+            
+            {/* Simulated streets / SVG overlay */}
+            <svg className="absolute inset-0 w-full h-full stroke-slate-300/40 dark:stroke-neutral-800/40 fill-none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 0 100 Q 150 120 300 250 T 600 300 T 900 450" strokeWidth="6" />
+              <path d="M 100 0 L 150 450" strokeWidth="4" />
+              <path d="M 400 0 Q 380 200 450 450" strokeWidth="4" />
+              <path d="M 0 350 L 900 200" strokeWidth="3" />
+              <circle cx="200" cy="180" r="100" className="stroke-slate-200 dark:stroke-neutral-800" strokeWidth="2" />
+            </svg>
+
+            {/* Interactive Markers */}
+            {[
+              { id: 1, name: 'Max (Labrador)', breed: 'Labrador Retriever', type: 'Perdida', lat: 35, lng: 28, desc: 'Último avistamiento cerca al Parque de la 93.', contact: '+57 300 123 4567', time: 'Hace 15 min' },
+              { id: 2, name: 'Luna (Siamés)', breed: 'Siamés', type: 'Encontrada', lat: 55, lng: 45, desc: 'Resguardada temporalmente en casa de paso.', contact: '+57 311 999 8888', time: 'Hace 1 hora' },
+              { id: 3, name: 'Veterinaria Chico 24/7', breed: 'Centro Médico', type: 'Veterinarias', lat: 25, lng: 70, desc: 'Emergencias y cirugías 24 horas.', contact: '601 345 6789', time: 'Abierto 24/7' },
+              { id: 4, name: 'Refugio Patitas Felices', breed: 'Albergue Verificado', type: 'Refugios', lat: 70, lng: 20, desc: 'Punto de recolección de donaciones autorizadas.', contact: '312 999 8888', time: 'Actualizado hace 3 días' },
+              { id: 5, name: 'Toby (Golden)', breed: 'Golden Retriever', type: 'Perdida', lat: 48, lng: 55, desc: 'Visto cruzando la Av. 19. Muy asustado.', contact: '+57 320 888 7777', time: 'Hace 8 min' }
+            ]
+              .filter(marker => selectedMapFilter === 'Todas' || marker.type === selectedMapFilter)
+              .map(marker => {
+                let colorClass = '';
+                if (marker.type === 'Perdida') colorClass = 'bg-petuno-coral';
+                else if (marker.type === 'Encontrada') colorClass = 'bg-petuno-mint';
+                else if (marker.type === 'Refugios') colorClass = 'bg-amber-500';
+                else if (marker.type === 'Veterinarias') colorClass = 'bg-purple-600';
+
+                return (
+                  <button
+                    key={marker.id}
+                    onClick={() => setSelectedMapMarker(marker)}
+                    className="absolute group transition-transform hover:scale-125 focus:outline-none"
+                    style={{ top: `${marker.lat}%`, left: `${marker.lng}%` }}
+                  >
+                    {/* Ring ripples for active states */}
+                    {(marker.type === 'Perdida' || marker.type === 'Encontrada') && (
+                      <span className={`absolute inline-flex h-6 w-6 rounded-full opacity-75 animate-ping -left-1.5 -top-1.5 ${colorClass}`}></span>
+                    )}
+                    
+                    {/* Actual marker pin dot */}
+                    <div className={`w-3 h-3 rounded-full border-2 border-white dark:border-neutral-900 shadow-md ${colorClass}`}></div>
+                    
+                    {/* Floating label */}
+                    <div className="absolute left-1/2 transform -translate-x-1/2 bottom-5 bg-black/85 backdrop-blur-sm text-white text-[9px] font-bold px-2 py-0.5 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-30">
+                      {marker.name}
+                    </div>
+                  </button>
+                );
+              })}
+
+            {/* Compass / Map Controls Mock */}
+            <div className="absolute bottom-4 right-4 flex flex-col gap-1 bg-white dark:bg-dark-surface p-1.5 rounded-xl border border-petuno-border dark:border-petuno-secondary-text/20 shadow-md">
+              <button onClick={() => alert('Acercar mapa (Mock)')} className="w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-petuno-background dark:hover:bg-dark-surface-elevated rounded">+</button>
+              <button onClick={() => alert('Alejar mapa (Mock)')} className="w-6 h-6 flex items-center justify-center text-xs font-bold hover:bg-petuno-background dark:hover:bg-dark-surface-elevated rounded">-</button>
+            </div>
+            
+            {/* Watermark */}
+            <div className="absolute bottom-4 left-4 bg-white/70 dark:bg-black/50 backdrop-blur-sm text-[8px] font-bold text-petuno-secondary-text dark:text-dark-secondary-text px-2 py-0.5 rounded uppercase tracking-wider select-none">
+              Bogotá D.C. - Live Map Grid
+            </div>
+
+          </div>
+
+          {/* Map Detail Sidebar Panel */}
+          <div className="bg-white dark:bg-dark-surface border border-petuno-border dark:border-petuno-secondary-text/15 rounded-3xl p-5 flex flex-col justify-between shadow-sm">
+            {selectedMapMarker ? (
+              <div className="space-y-4">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <span className={`text-[8px] font-extrabold text-white px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                      selectedMapMarker.type === 'Perdida' ? 'bg-petuno-coral' :
+                      selectedMapMarker.type === 'Encontrada' ? 'bg-petuno-mint' :
+                      selectedMapMarker.type === 'Refugios' ? 'bg-amber-500' : 'bg-purple-600'
+                    }`}>
+                      {selectedMapMarker.type === 'Perdida' ? 'Perdido' :
+                       selectedMapMarker.type === 'Encontrada' ? 'Encontrado' :
+                       selectedMapMarker.type === 'Refugios' ? 'Refugio' : 'Veterinaria'}
+                    </span>
+                    <h3 className="text-base font-extrabold text-petuno-text dark:text-dark-text mt-2">
+                      {selectedMapMarker.name}
+                    </h3>
+                    <p className="text-[10px] text-petuno-secondary-text dark:text-dark-secondary-text">
+                      {selectedMapMarker.breed} • {selectedMapMarker.time}
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => setSelectedMapMarker(null)}
+                    className="text-petuno-secondary-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated p-1 rounded-lg"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="bg-petuno-background dark:bg-dark-surface-elevated p-3.5 rounded-2xl text-[11px] space-y-2 border border-petuno-border/30">
+                  <p className="text-petuno-text dark:text-dark-text italic leading-relaxed">
+                    "{selectedMapMarker.desc}"
+                  </p>
+                  <div className="text-[10px] text-petuno-secondary-text space-y-0.5">
+                    <div>📞 Contacto directo: <strong className="text-petuno-text dark:text-dark-text">{selectedMapMarker.contact}</strong></div>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <button 
+                    onClick={() => alert(`Enviando alerta de confirmación al responsable de ${selectedMapMarker.name}...`)}
+                    className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm flex items-center justify-center gap-1.5"
+                  >
+                    📱 Enviar mensaje SOS
+                  </button>
+                  <button 
+                    onClick={() => alert(`Reportando avistamiento rápido de ${selectedMapMarker.name} en coordenadas actuales...`)}
+                    className="w-full bg-transparent hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-petuno-text dark:text-dark-text border border-petuno-border dark:border-petuno-secondary-text/40 font-bold py-2.5 rounded-xl text-xs transition-all"
+                  >
+                    📍 Reportar avistamiento aquí
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="h-full flex flex-col items-center justify-center text-center space-y-3 py-12">
+                <div className="w-12 h-12 rounded-full bg-petuno-purple/5 flex items-center justify-center text-petuno-purple">
+                  <MapPin className="w-6 h-6" />
+                </div>
+                <h4 className="font-extrabold text-sm text-petuno-text dark:text-dark-text">Selecciona un marcador</h4>
+                <p className="text-[10px] text-petuno-secondary-text dark:text-dark-secondary-text max-w-[200px] leading-relaxed">
+                  Haz clic sobre cualquier marcador en el mapa para ver la ficha de emergencia, información médica o contacto del refugio.
+                </p>
+              </div>
+            )}
+
+            <div className="border-t border-petuno-border/50 dark:border-petuno-secondary-text/10 pt-4 mt-6">
+              <div className="flex items-center gap-1 text-[9px] font-extrabold uppercase tracking-wider text-petuno-purple">
+                <span>🛡️ Red de Ayuda Autorizada</span>
+              </div>
+              <p className="text-[9px] text-petuno-secondary-text mt-1 leading-snug">
+                Petuno no comparte números de teléfono privados de forma abierta. Las alertas se gestionan a través de servidores encriptados de Petuno ID.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
       {/* Explora Petuno Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full text-center">
         <div className="flex flex-col items-center justify-center mb-10">
@@ -454,18 +851,261 @@ function Home() {
         </div>
       </section>
 
+      {/* Foundations and Adoptions Section */}
+      <section id="adopciones-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full text-left bg-petuno-surface/40 dark:bg-dark-surface/10 rounded-3xl border border-petuno-border/50 dark:border-petuno-secondary-text/5">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10">
+          <div>
+            <h2 className="text-2xl font-bold text-petuno-text dark:text-dark-text flex items-center gap-2">
+              🐾 Fundaciones y Mascotas en Adopción
+            </h2>
+            <p className="text-sm text-petuno-secondary-text mt-2 max-w-xl">
+              Apoya a los refugios locales de Colombia. Adopta, no compres, y dales una segunda oportunidad.
+            </p>
+          </div>
+          <Link 
+            to="/register" 
+            className="text-xs font-bold text-petuno-purple hover:underline mt-4 md:mt-0 flex items-center gap-1"
+          >
+            ¿Eres una fundación? Regístrate aquí →
+          </Link>
+        </div>
+
+        {/* List of Foundations */}
+        <div className="space-y-12">
+          {/* Foundation 1 */}
+          <div className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/10 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-petuno-border/55 dark:border-petuno-secondary-text/10 pb-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-petuno-purple-50 dark:bg-dark-surface-elevated flex items-center justify-center text-xl font-extrabold text-petuno-purple shrink-0 shadow-inner">
+                  🐾
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base">Fundación Patitas Felices</h3>
+                  <p className="text-[11px] text-petuno-secondary-text flex items-center gap-1 mt-0.5">
+                    📍 Bogotá, Cedritos • NIT 901.332.881-2
+                  </p>
+                </div>
+              </div>
+              <Link 
+                to="/register" 
+                className="bg-petuno-purple/10 text-petuno-purple hover:bg-petuno-purple hover:text-white transition-all font-bold px-4 py-2 rounded-xl text-xs"
+              >
+                Apoyar Fundación
+              </Link>
+            </div>
+
+            {/* Adoptable Pets Grid for Foundation 1 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+              <AdoptablePetCard 
+                name="Lola"
+                breed="Criolla (Poodle Mix)"
+                age="6 meses"
+                photo="https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=600&auto=format&fit=crop"
+                tag="Ideal para apartamento"
+              />
+              <AdoptablePetCard 
+                name="Rocco"
+                breed="Golden Retriever Mix"
+                age="2 años"
+                photo="https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=600&auto=format&fit=crop"
+                tag="Discapacidad (Trípode)"
+                isSpecialNeeds={true}
+              />
+              <AdoptablePetCard 
+                name="Simba"
+                breed="Tabby"
+                age="1 año"
+                photo="https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=600&auto=format&fit=crop"
+                tag="Cariñoso y hogareño"
+              />
+            </div>
+          </div>
+
+          {/* Foundation 2 */}
+          <div className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/10 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-petuno-border/55 dark:border-petuno-secondary-text/10 pb-4">
+              <div className="flex items-center gap-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-petuno-purple-50 dark:bg-dark-surface-elevated flex items-center justify-center text-xl font-extrabold text-petuno-purple shrink-0 shadow-inner">
+                  🏡
+                </div>
+                <div>
+                  <h3 className="font-extrabold text-base">Refugio Huellas de Amor</h3>
+                  <p className="text-[11px] text-petuno-secondary-text flex items-center gap-1 mt-0.5">
+                    📍 Medellín, Sabaneta • NIT 800.124.992-0
+                  </p>
+                </div>
+              </div>
+              <Link 
+                to="/register" 
+                className="bg-petuno-purple/10 text-petuno-purple hover:bg-petuno-purple hover:text-white transition-all font-bold px-4 py-2 rounded-xl text-xs"
+              >
+                Apoyar Refugio
+              </Link>
+            </div>
+
+            {/* Adoptable Pets Grid for Foundation 2 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 font-sans">
+              <AdoptablePetCard 
+                name="Kiwi"
+                breed="Pastor Alemán Mix"
+                age="8 meses"
+                photo="https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=600&auto=format&fit=crop"
+                tag="Muy inteligente"
+              />
+              <AdoptablePetCard 
+                name="Sasha"
+                breed="Siamesa"
+                age="3 meses"
+                photo="https://images.unsplash.com/photo-1533738363-b7f9aef128ce?q=80&w=600&auto=format&fit=crop"
+                tag="Juguetona y activa"
+              />
+              <AdoptablePetCard 
+                name="Bethoven"
+                breed="San Bernardo Mix"
+                age="4 años"
+                photo="https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=600&auto=format&fit=crop"
+                tag="Tamaño grande"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Stats Section */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full">
         <div className="bg-petuno-surface dark:bg-dark-surface-elevated rounded-3xl p-8 lg:p-12 border border-petuno-border dark:border-transparent shadow-sm flex flex-col sm:flex-row flex-wrap justify-between items-center gap-8 text-center">
-          <StatBox icon={<PawPrint className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="+10K" text="Mascotas registradas" />
-          <StatBox icon={<Heart className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="+2K" text="Reencuentros felices" />
-          <StatBox icon={<UserCircle className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="+1K" text="En adopción" />
-          <StatBox icon={<Users className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="+500" text="Familias ayudadas" />
+          <StatBox icon={<PawPrint className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="10.482" text="Mascotas identificadas" />
+          <StatBox icon={<Heart className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="2.183" text="Mascotas reencontradas" />
+          <StatBox icon={<UserCircle className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="1.024" text="Adopciones exitosas" />
+          <StatBox icon={<Users className="w-8 h-8 text-petuno-purple" fill="currentColor"/>} number="536" text="Rescates asistidos" />
+        </div>
+      </section>
+
+      {/* Donations SOS Section */}
+      <section id="donaciones-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 w-full text-left">
+        <div className="bg-gradient-to-br from-petuno-coral/5 to-petuno-purple/5 dark:from-petuno-coral/10 dark:to-petuno-purple/10 p-8 lg:p-12 rounded-3xl border border-petuno-border/55 dark:border-petuno-secondary-text/10 shadow-sm space-y-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 border-b border-petuno-border/40 pb-4">
+            <div>
+              <span className="bg-petuno-purple/10 text-petuno-purple text-[10px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider block w-max mb-3">
+                ❤️ SOLIDARIDAD TRANSPARENTE
+              </span>
+              <h2 className="text-3xl font-extrabold text-petuno-text dark:text-dark-text">
+                Ayuda Directa a Fundaciones
+              </h2>
+              <p className="text-sm text-petuno-secondary-text mt-2 leading-relaxed max-w-xl">
+                Petuno no interviene en las transacciones. Tu aporte va directo al refugio verificado de tu elección, sin comisiones intermedias.
+              </p>
+            </div>
+            <div className="bg-white/80 dark:bg-black/40 backdrop-blur-sm p-3 rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/10 text-[10px] text-petuno-purple font-bold flex items-center gap-1.5 shrink-0 shadow-sm">
+              <span>🛡️ Cuentas Bancarias Verificadas ✓</span>
+            </div>
+          </div>
+
+          {/* Campaign target progress indicators */}
+          <div className="bg-white dark:bg-dark-surface p-6 rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/15 space-y-4">
+            <div className="flex justify-between items-center text-xs">
+              <span className="font-extrabold text-petuno-text dark:text-dark-text">Campaña SOS Sismo: Medicamentos y Comida</span>
+              <span className="text-[11px] font-bold text-petuno-purple">Meta: $850.000 COP</span>
+            </div>
+            <p className="text-[11px] text-petuno-secondary-text leading-tight">
+              Aportes requeridos para costear el tratamiento de emergencia de 4 mascotas rescatadas con fracturas en Cedritos.
+            </p>
+
+            <div className="space-y-3 pt-2">
+              <div>
+                <div className="flex justify-between text-[10px] font-semibold mb-1">
+                  <span>🍚 Alimento Concentrado</span>
+                  <span>72% (Faltan 80 kg)</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-neutral-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-petuno-purple h-full rounded-full" style={{ width: '72%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-[10px] font-semibold mb-1">
+                  <span>💊 Medicamentos para heridas</span>
+                  <span>35% (Faltan $550.000 COP)</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-neutral-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-petuno-coral h-full rounded-full" style={{ width: '35%' }}></div>
+                </div>
+              </div>
+              <div>
+                <div className="flex justify-between text-[10px] font-semibold mb-1">
+                  <span>🛏️ Cobijas e Insumos térmicos</span>
+                  <span>81% (Faltan 10 cobijas)</span>
+                </div>
+                <div className="w-full bg-slate-100 dark:bg-neutral-800 h-2 rounded-full overflow-hidden">
+                  <div className="bg-amber-500 h-full rounded-full" style={{ width: '81%' }}></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-2 font-sans">
+            {/* Donation Card 1 */}
+            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/10 shadow-sm flex flex-col justify-between">
+              <div>
+                <h4 className="font-extrabold text-sm flex items-center gap-2">
+                  🍲 Insumos Físicos
+                </h4>
+                <p className="text-[11px] text-petuno-secondary-text mt-2 leading-relaxed">
+                  Lleva concentrado, gasas, vendas, collares o cobijas directamente a los centros de acopio autorizados.
+                </p>
+              </div>
+              <button 
+                onClick={() => alert('Puntos de recolección autorizados:\n- Bogotá: Calle 93 # 12-40 (Sede Petuno)\n- Medellín: Sabaneta Calle 50 # 10\n- Cali: Av. 6 Norte # 12')}
+                className="mt-6 w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white text-center py-2.5 rounded-xl text-xs font-bold transition-all"
+              >
+                Ver Puntos de Entrega
+              </button>
+            </div>
+
+            {/* Donation Card 2 */}
+            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/10 shadow-sm flex flex-col justify-between">
+              <div>
+                <h4 className="font-extrabold text-sm flex items-center gap-2">
+                  💳 Transferencia Bancaria
+                </h4>
+                <p className="text-[11px] text-petuno-secondary-text mt-2 leading-relaxed">
+                  Realiza transferencias seguras directo a las cuentas Nequi, Daviplata o Bancolombia verificadas de los refugios.
+                </p>
+              </div>
+              <button 
+                onClick={() => alert('Cuentas Bancarias Oficiales Verificadas (100% Directo):\n- Fund. Patitas Felices: Nequi / Daviplata: 312 456 7890 (NIT 901.332.881)\n- Refugio Huellas: Bancolombia Ahorros: 032-99881-22')}
+                className="mt-6 w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white text-center py-2.5 rounded-xl text-xs font-bold transition-all"
+              >
+                Ver Cuentas de Banco
+              </button>
+            </div>
+
+            {/* Donation Card 3 */}
+            <div className="bg-white dark:bg-dark-surface p-6 rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/10 shadow-sm flex flex-col justify-between">
+              <div>
+                <h4 className="font-extrabold text-sm flex items-center gap-2">
+                  🏥 Padrino Médico
+                </h4>
+                <p className="text-[11px] text-petuno-secondary-text mt-2 leading-relaxed">
+                  Financia directamente el tratamiento de un animal herido en las clínicas veterinarias asociadas.
+                </p>
+              </div>
+              <button 
+                onClick={() => alert('Contactando al coordinador de urgencias veterinarias de Petuno. Te asignaremos una mascota y la cuenta de cobro directa de la clínica veterinaria.')}
+                className="mt-6 w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white text-center py-2.5 rounded-xl text-xs font-bold transition-all"
+              >
+                Apadrinar una Mascota
+              </button>
+            </div>
+          </div>
+          
+          <p className="text-[10px] text-petuno-secondary-text text-center italic mt-2">
+            ⚠️ Nota de Transparencia: Petuno no recauda fondos directamente para fundaciones ni cobra comisiones. Apoyas de forma directa y autónoma.
+          </p>
         </div>
       </section>
 
       {/* Newsletter Section */}
-      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full mb-12">
+      <section id="blog-section" className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 w-full mb-12">
         <div className="bg-white dark:bg-dark-surface-elevated rounded-3xl p-8 lg:p-12 border border-petuno-border dark:border-petuno-secondary-text/30 shadow-sm flex flex-col lg:flex-row justify-between items-center gap-8">
           <div className="lg:w-1/2 text-center lg:text-left">
             <h3 className="text-2xl font-bold text-petuno-text dark:text-dark-text mb-2">Únete a nuestra comunidad</h3>
@@ -648,9 +1288,13 @@ function Login({ onLogin }: { onLogin: (user: { name: string; email: string; pho
 // REGISTER COMPONENT
 // ============================================================================
 
-function Register({ onLogin }: { onLogin: (user: { name: string; email: string; phone?: string }) => void }) {
+function Register({ onLogin }: { onLogin: (user: { name: string; email: string; phone?: string; role?: string }) => void }) {
+  const [role, setRole] = useState<'propietario' | 'fundacion'>('propietario');
   const [nombre, setNombre] = useState('');
   const [apellido, setApellido] = useState('');
+  const [nombreFundacion, setNombreFundacion] = useState('');
+  const [nit, setNit] = useState('');
+  const [direccion, setDireccion] = useState('');
   const [email, setEmail] = useState('');
   const [telefono, setTelefono] = useState('');
   const [password, setPassword] = useState('');
@@ -673,19 +1317,21 @@ function Register({ onLogin }: { onLogin: (user: { name: string; email: string; 
 
     setIsRegistered(true);
     setTimeout(() => {
-      onLogin({ name: nombre || 'John', email, phone: telefono });
+      const finalName = role === 'propietario' ? nombre : nombreFundacion;
+      onLogin({ name: finalName || 'Fundación', email, phone: telefono, role });
       navigate('/app');
     }, 2000);
   };
 
   if (isRegistered) {
+    const finalName = role === 'propietario' ? nombre : nombreFundacion;
     return (
       <div className="min-h-screen flex items-center justify-center bg-petuno-background dark:bg-dark-background px-4 py-28 font-sans">
         <div className="max-w-md w-full bg-petuno-surface dark:bg-dark-surface rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/20 p-8 shadow-xl text-center">
           <div className="w-16 h-16 rounded-full bg-petuno-mint-light flex items-center justify-center mx-auto mb-4 border border-petuno-mint/20">
             <ShieldCheck className="w-9 h-9 text-petuno-mint animate-pulse" />
           </div>
-          <h2 className="text-2xl font-bold text-petuno-text dark:text-dark-text">¡Bienvenido a Petuno, {nombre}!</h2>
+          <h2 className="text-2xl font-bold text-petuno-text dark:text-dark-text">¡Bienvenido a Petuno, {finalName}!</h2>
           <p className="text-sm text-petuno-secondary-text dark:text-dark-secondary-text mt-2">
             Estamos creando tu espacio local personalizado...
           </p>
@@ -713,31 +1359,97 @@ function Register({ onLogin }: { onLogin: (user: { name: string; email: string; 
           </div>
         )}
 
+        {/* Role Tab Switcher */}
+        <div className="flex bg-petuno-background dark:bg-dark-surface-elevated rounded-2xl p-1 mb-5">
+          <button
+            type="button"
+            onClick={() => { setRole('propietario'); setError(''); }}
+            className={`flex-1 text-center py-2 text-xs font-bold rounded-xl transition-all ${
+              role === 'propietario'
+                ? 'bg-petuno-purple text-white shadow-sm'
+                : 'text-petuno-secondary-text dark:text-dark-secondary-text hover:text-petuno-text'
+            }`}
+          >
+            Propietario
+          </button>
+          <button
+            type="button"
+            onClick={() => { setRole('fundacion'); setError(''); }}
+            className={`flex-1 text-center py-2 text-xs font-bold rounded-xl transition-all ${
+              role === 'fundacion'
+                ? 'bg-petuno-purple text-white shadow-sm'
+                : 'text-petuno-secondary-text dark:text-dark-secondary-text hover:text-petuno-text'
+            }`}
+          >
+            Fundación
+          </button>
+        </div>
+
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-left">
-              <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">Nombre</label>
-              <input 
-                type="text" 
-                required
-                value={nombre}
-                onChange={(e) => setNombre(e.target.value)}
-                placeholder="John" 
-                className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-sm text-petuno-text dark:text-dark-text focus:outline-none focus:border-petuno-purple transition-colors"
-              />
+          {role === 'propietario' ? (
+            <div className="grid grid-cols-2 gap-4 animate-fade-in">
+              <div className="text-left">
+                <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">Nombre</label>
+                <input 
+                  type="text" 
+                  required
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  placeholder="John" 
+                  className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-sm text-petuno-text dark:text-dark-text focus:outline-none focus:border-petuno-purple transition-colors"
+                />
+              </div>
+              <div className="text-left">
+                <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">Apellido</label>
+                <input 
+                  type="text" 
+                  required
+                  value={apellido}
+                  onChange={(e) => setApellido(e.target.value)}
+                  placeholder="Doe" 
+                  className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-sm text-petuno-text dark:text-dark-text focus:outline-none focus:border-petuno-purple transition-colors"
+                />
+              </div>
             </div>
-            <div className="text-left">
-              <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">Apellido</label>
-              <input 
-                type="text" 
-                required
-                value={apellido}
-                onChange={(e) => setApellido(e.target.value)}
-                placeholder="Doe" 
-                className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-sm text-petuno-text dark:text-dark-text focus:outline-none focus:border-petuno-purple transition-colors"
-              />
+          ) : (
+            <div className="space-y-4 animate-fade-in text-left">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">Nombre de la Fundación</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={nombreFundacion}
+                    onChange={(e) => setNombreFundacion(e.target.value)}
+                    placeholder="Fundación Patitas" 
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-sm text-petuno-text dark:text-dark-text focus:outline-none focus:border-petuno-purple transition-colors"
+                  />
+                </div>
+                <div className="text-left">
+                  <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">NIT</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={nit}
+                    onChange={(e) => setNit(e.target.value)}
+                    placeholder="901.234.567-8" 
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-sm text-petuno-text dark:text-dark-text focus:outline-none focus:border-petuno-purple transition-colors"
+                  />
+                </div>
+              </div>
+              <div className="text-left">
+                <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">Dirección de la Sede / Albergue</label>
+                <input 
+                  type="text" 
+                  required
+                  value={direccion}
+                  onChange={(e) => setDireccion(e.target.value)}
+                  placeholder="Calle 100 # 15-30, Bogotá" 
+                  className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-sm text-petuno-text dark:text-dark-text focus:outline-none focus:border-petuno-purple transition-colors"
+                />
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="text-left">
             <label className="block text-xs font-semibold text-petuno-secondary-text dark:text-dark-secondary-text mb-2">Email</label>
@@ -849,6 +1561,7 @@ function Dashboard({
   const [editingPetId, setEditingPetId] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showQRModal, setShowQRModal] = useState<string | null>(null);
+  const [showNotificationsDropdown, setShowNotificationsDropdown] = useState(false);
   
   // Sighting & Public profile states
   const [sightingPetIdForForm, setSightingPetIdForForm] = useState<string | null>(null);
@@ -1130,10 +1843,67 @@ function Dashboard({
     localStorage.setItem('privacy_settings', JSON.stringify(privacySettings));
   }, [privacySettings]);
 
+  // Notifications state
+  const [notifications, setNotifications] = useState<NotificationItem[]>(() => {
+    const saved = localStorage.getItem('notifications');
+    if (saved) return JSON.parse(saved);
+    return [
+      {
+        id: 'n1',
+        title: '¡Toby tiene un nuevo avistamiento!',
+        desc: 'Alguien reportó haber visto a Toby cerca de Carrera 11 con Calle 90.',
+        time: 'Hace 5 minutos',
+        read: false,
+        type: 'Alertas'
+      },
+      {
+        id: 'n2',
+        title: 'Alerta de Geocerca: Max salió de Casa',
+        desc: 'El collar GPS de Max detectó que cruzó el límite seguro de la geocerca "Casa".',
+        time: 'Hace 12 minutos',
+        read: false,
+        type: 'GPS'
+      },
+      {
+        id: 'n3',
+        title: 'Próxima Vacuna Programada',
+        desc: 'La vacuna de Rabia de Max está programada para el 21 de Septiembre.',
+        time: 'Hace 2 horas',
+        read: true,
+        type: 'Vacunas'
+      },
+      {
+        id: 'n4',
+        title: 'Nueva solicitud de adopción',
+        desc: 'Has recibido una nueva postulación de John Doe para adoptar a Lola.',
+        time: 'Ayer',
+        read: true,
+        type: 'Sistema'
+      }
+    ];
+  });
+
+  // Save notifications to localStorage
+  useEffect(() => {
+    localStorage.setItem('notifications', JSON.stringify(notifications));
+  }, [notifications]);
+
   const handleToggleDeviceStatus = (deviceId: string) => {
     setDevices(prev => prev.map(d => {
       if (d.id === deviceId) {
         const newStatus = d.status === 'Conectado' ? 'Desconectado' : 'Conectado';
+        
+        // Add a notification about device status change
+        const newNotification: NotificationItem = {
+          id: `notif-${Date.now()}`,
+          title: `Dispositivo ${d.name} ${newStatus === 'Conectado' ? 'en línea' : 'desconectado'}`,
+          desc: `El hardware se ha registrado como ${newStatus === 'Conectado' ? 'activo' : 'fuera de línea'}.`,
+          time: 'Hace unos instantes',
+          read: false,
+          type: 'Dispositivos'
+        };
+        setNotifications(prevNotif => [newNotification, ...prevNotif]);
+
         return { ...d, status: newStatus, lastConnection: 'Hace unos instantes' };
       }
       return d;
@@ -1265,15 +2035,77 @@ function Dashboard({
             <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-petuno-secondary-text dark:text-dark-secondary-text transition-colors">
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
-            <button className="p-2 rounded-full hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-petuno-secondary-text dark:text-dark-secondary-text relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-petuno-purple border-2 border-petuno-surface dark:border-dark-surface rounded-full"></span>
-            </button>
-            <div className="w-px h-6 bg-petuno-border dark:bg-petuno-secondary-text/30"></div>
-            <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-8 h-8 rounded-full bg-petuno-purple-50 dark:bg-dark-surface-elevated flex items-center justify-center font-bold text-petuno-purple text-xs">
-                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'JO'}
-              </div>
+            <div className="relative">
+              <button 
+                onClick={() => setShowNotificationsDropdown(!showNotificationsDropdown)}
+                className="p-2 rounded-full hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-petuno-secondary-text dark:text-dark-secondary-text relative"
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.filter(n => !n.read).length > 0 && (
+                  <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-petuno-purple border-2 border-petuno-surface dark:border-dark-surface rounded-full"></span>
+                )}
+              </button>
+              
+              {showNotificationsDropdown && (
+                <div className="absolute right-0 mt-2 w-80 bg-petuno-surface dark:bg-dark-surface border border-petuno-border dark:border-petuno-secondary-text/15 rounded-2xl p-4 shadow-xl z-50 text-xs text-left animate-fade-in">
+                  <div className="flex justify-between items-center border-b border-petuno-border dark:border-petuno-secondary-text/10 pb-2 mb-2 font-bold">
+                    <span>Notificaciones</span>
+                    <button 
+                      onClick={() => {
+                        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                        setShowNotificationsDropdown(false);
+                      }}
+                      className="text-[10px] text-petuno-purple hover:underline"
+                    >
+                      Marcar todas como leídas
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-2.5 max-h-64 overflow-y-auto py-1">
+                    {notifications.slice(0, 4).map(notif => (
+                      <div 
+                        key={notif.id} 
+                        onClick={() => {
+                          setNotifications(prev => prev.map(n => n.id === notif.id ? { ...n, read: true } : n));
+                          setShowNotificationsDropdown(false);
+                          changeTab('Notificaciones');
+                        }}
+                        className={`p-2 rounded-xl border transition-colors cursor-pointer text-left ${
+                          notif.read 
+                            ? 'bg-transparent border-transparent hover:bg-petuno-background dark:hover:bg-dark-surface-elevated/40' 
+                            : 'bg-petuno-purple/5 border-petuno-purple/10 hover:bg-petuno-purple/10 dark:bg-petuno-purple/10 dark:border-petuno-purple/20'
+                        }`}
+                      >
+                        <div className="flex justify-between items-baseline gap-1 font-bold">
+                          <span className={notif.read ? 'text-petuno-text dark:text-dark-text' : 'text-petuno-purple'}>
+                            {notif.title}
+                          </span>
+                          <span className="text-[8px] text-petuno-muted shrink-0">{notif.time}</span>
+                        </div>
+                        <p className="text-[10px] text-petuno-secondary-text dark:text-dark-secondary-text mt-0.5 leading-snug truncate">
+                          {notif.desc}
+                        </p>
+                      </div>
+                    ))}
+                    
+                    {notifications.length === 0 && (
+                      <p className="text-center py-4 text-petuno-muted italic">No tienes notificaciones</p>
+                    )}
+                  </div>
+                  
+                  <div className="border-t border-petuno-border dark:border-petuno-secondary-text/10 pt-2 mt-2 text-center">
+                    <button 
+                      onClick={() => {
+                        setShowNotificationsDropdown(false);
+                        changeTab('Notificaciones');
+                      }}
+                      className="text-[10px] font-bold text-petuno-purple hover:underline"
+                    >
+                      Ver todas las notificaciones
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
@@ -1721,6 +2553,18 @@ function Dashboard({
                     timestamp: Date.now()
                   };
                   setSightings(prev => [newSighting, ...prev]);
+                  
+                  // Add alert notification
+                  const newNotification: NotificationItem = {
+                    id: `notif-${Date.now()}`,
+                    title: `Nuevo avistamiento de ${targetPet.name}`,
+                    desc: `Reportado en ${location}. Descripción: ${description}`,
+                    time: 'Hace unos instantes',
+                    read: false,
+                    type: 'Alertas'
+                  };
+                  setNotifications(prevNotif => [newNotification, ...prevNotif]);
+
                   alert(`¡Avistamiento reportado para ${targetPet.name}! Se ha notificado al propietario.`);
                 }
                 setIsReportingSighting(false);
@@ -1887,6 +2731,17 @@ function Dashboard({
                   date: new Date().toISOString().split('T')[0]
                 };
                 setAdoptionApplications(prev => [newApplication, ...prev]);
+                
+                // Dispatch system notification
+                const newNotification: NotificationItem = {
+                  id: `notif-${Date.now()}`,
+                  title: 'Solicitud de adopción enviada',
+                  desc: `Tu postulación para adoptar a ${newApplication.petName} fue enviada con éxito.`,
+                  time: 'Hace unos instantes',
+                  read: false,
+                  type: 'Sistema'
+                };
+                setNotifications(prev => [newNotification, ...prev]);
               }}
             />
           )}
@@ -1912,8 +2767,30 @@ function Dashboard({
             />
           )}
 
+          {/* Notifications View */}
+          {activeTab === 'Notificaciones' && !currentPetIdForView && !isCreatingPet && !editingPetId && !activeLostPetId && !isReportingSighting && !isReportingUnidentified && (
+            <NotificationsView 
+              notifications={notifications}
+              onMarkAsRead={(id) => {
+                setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: !n.read } : n));
+              }}
+              onMarkAllAsRead={() => {
+                setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+                alert('¡Todas las notificaciones han sido marcadas como leídas!');
+              }}
+              onDeleteNotification={(id) => {
+                setNotifications(prev => prev.filter(n => n.id !== id));
+              }}
+              onClearAll={() => {
+                if (window.confirm('¿Estás seguro de que deseas eliminar todas las notificaciones?')) {
+                  setNotifications([]);
+                }
+              }}
+            />
+          )}
+
           {/* 7. OTROS MÓDULOS EN DESARROLLO */}
-          {activeTab !== 'Dashboard' && activeTab !== 'Mis mascotas' && activeTab !== 'Mascotas perdidas' && activeTab !== 'Avistamientos' && activeTab !== 'Comunidad' && activeTab !== 'Dispositivos' && activeTab !== 'Veterinarios' && activeTab !== 'Adopciones' && activeTab !== 'Configuración' && !currentPetIdForView && !isCreatingPet && !editingPetId && !activeLostPetId && !isReportingSighting && !isReportingUnidentified && (
+          {activeTab !== 'Dashboard' && activeTab !== 'Mis mascotas' && activeTab !== 'Mascotas perdidas' && activeTab !== 'Avistamientos' && activeTab !== 'Comunidad' && activeTab !== 'Dispositivos' && activeTab !== 'Veterinarios' && activeTab !== 'Adopciones' && activeTab !== 'Configuración' && activeTab !== 'Notificaciones' && !currentPetIdForView && !isCreatingPet && !editingPetId && !activeLostPetId && !isReportingSighting && !isReportingUnidentified && (
             <div className="max-w-4xl mx-auto h-[60vh] flex flex-col items-center justify-center text-center">
               <div className="w-16 h-16 rounded-full bg-petuno-purple-50 dark:bg-dark-surface-elevated flex items-center justify-center text-petuno-purple mb-4">
                 <Settings className="w-8 h-8 animate-spin" style={{ animationDuration: '3s' }} />
@@ -2416,6 +3293,90 @@ function PetProfile({
         </button>
       </div>
 
+      {pet.status === 'Perdido' && (
+        <div className="bg-petuno-coral-light/20 dark:bg-petuno-coral/5 border-2 border-dashed border-petuno-coral rounded-2xl p-6 text-left space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-base font-extrabold text-petuno-coral flex items-center gap-1.5 uppercase">
+                🚨 Modo Mascota Perdida Activo
+              </h3>
+              <p className="text-xs text-petuno-secondary-text dark:text-dark-secondary-text mt-1 max-w-xl">
+                Petuno ha activado la red de rescate y ha auto-generado tu cartel SOS con código QR. Puedes imprimirlo para postes locales, compartirlo digitalmente o copiar el enlace directo.
+              </p>
+            </div>
+            <button
+              onClick={() => onToggleLost(pet.id)}
+              className="bg-petuno-coral text-white hover:bg-petuno-coral-dark text-xs font-bold px-4 py-2.5 rounded-xl transition-all self-start sm:self-center whitespace-nowrap shadow-sm"
+            >
+              Marcar como Encontrado
+            </button>
+          </div>
+
+          {/* SOS Poster Mock Visual Grid */}
+          <div className="bg-white dark:bg-dark-surface-elevated rounded-2xl p-6 border-4 border-red-600 max-w-sm mx-auto space-y-4 text-center text-black dark:text-white shadow-xl font-sans">
+            <div className="bg-red-600 text-white font-extrabold py-3 text-base rounded-lg tracking-widest animate-pulse">
+              🚨 SE BUSCA 🚨
+            </div>
+            
+            <div className="w-44 h-44 mx-auto rounded-xl overflow-hidden bg-gray-100 border border-gray-200">
+              <img src={pet.photo} alt={pet.name} className="w-full h-full object-cover" />
+            </div>
+
+            <div className="space-y-1">
+              <h4 className="text-2xl font-extrabold uppercase tracking-wide">{pet.name}</h4>
+              <p className="text-xs text-slate-700 dark:text-slate-300 font-bold">{pet.breed} • {pet.gender}</p>
+              <p className="text-[10px] text-red-600 font-extrabold uppercase mt-1">Perdido en: {pet.lastSeenLocation || 'Zona de Cedritos, Bogotá'}</p>
+            </div>
+
+            <div className="bg-slate-50 dark:bg-dark-surface p-3.5 rounded-xl border border-slate-200/60 dark:border-petuno-secondary-text/10 space-y-3">
+              <div className="flex justify-center">
+                <div className="bg-white p-2 rounded-xl border border-slate-200 shadow-sm">
+                  <QrCodeMockup />
+                </div>
+              </div>
+              <div className="space-y-1">
+                <span className="text-[9.5px] font-extrabold text-petuno-purple uppercase tracking-wider block">Escanea para reportar ubicación</span>
+                <p className="text-[9px] text-slate-600 dark:text-slate-400 leading-snug">
+                  O entra a <strong>Petuno.com</strong> e ingresa el ID: <strong className="font-mono text-petuno-purple">{pet.petunoId}</strong> para alertar al dueño.
+                </p>
+              </div>
+            </div>
+
+            <div className="space-y-1 pt-1">
+              <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 dark:text-slate-400">Contacto de Emergencia:</p>
+              <p className="text-base font-extrabold text-red-600">{pet.emergencyContact || '312 456 7890'}</p>
+            </div>
+
+            <div className="border-t border-slate-100 dark:border-petuno-secondary-text/15 pt-3 flex flex-wrap gap-2 justify-center">
+              <button 
+                onClick={() => {
+                  alert('Generando PDF y abriendo menú de impresión de sistema...');
+                  window.print();
+                }}
+                className="bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 px-3 py-2 rounded-lg text-[9px] font-extrabold flex items-center gap-1 hover:opacity-90 transition-all shadow-sm"
+              >
+                🖨️ Imprimir Cartel / PDF
+              </button>
+              <button 
+                onClick={() => alert(`Compartiendo cartel de búsqueda en WhatsApp para: https://petuno.com/p/${pet.petunoId}`)}
+                className="bg-green-600 text-white px-3 py-2 rounded-lg text-[9px] font-extrabold flex items-center gap-1 hover:bg-green-700 transition-all shadow-sm"
+              >
+                💬 Compartir
+              </button>
+              <button 
+                onClick={() => {
+                  navigator.clipboard.writeText(`https://petuno.com/p/${pet.petunoId}`);
+                  alert('Enlace de búsqueda copiado al portapapeles.');
+                }}
+                className="bg-slate-100 dark:bg-dark-surface-elevated text-slate-700 dark:text-slate-200 px-3 py-2 rounded-lg text-[9px] font-extrabold flex items-center gap-1 hover:bg-slate-200 border border-slate-200 dark:border-transparent transition-all"
+              >
+                🔗 Copiar Enlace
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Profile Header */}
       <div className="bg-petuno-surface dark:bg-dark-surface rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/15 p-6 shadow-sm flex flex-col md:flex-row items-center md:items-start gap-6 text-left relative overflow-hidden">
         <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-2xl overflow-hidden bg-petuno-background flex-shrink-0">
@@ -2559,6 +3520,15 @@ function PetProfile({
                   className="w-full flex items-center gap-3 px-4 py-3 border border-petuno-border dark:border-petuno-secondary-text/15 hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-xs font-bold rounded-xl transition-all"
                 >
                   <ArrowRight className="w-4 h-4 text-petuno-purple" /> Compartir perfil público
+                </button>
+                <button 
+                  onClick={() => {
+                    alert('Generando PDF y abriendo menú de impresión de sistema...');
+                    window.print();
+                  }}
+                  className="w-full flex items-center gap-3 px-4 py-3 border border-petuno-border dark:border-petuno-secondary-text/15 hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-xs font-bold rounded-xl transition-all"
+                >
+                  <FileText className="w-4 h-4 text-petuno-purple" /> Generar Cartel de Búsqueda
                 </button>
               </div>
             </div>
@@ -2915,7 +3885,7 @@ function DocumentRow({ name, size, date }: { name: string; size: string; date: s
 function TimelineRow({ icon, title, time, desc }: { icon: React.ReactNode; title: string; time: string; desc: string }) {
   return (
     <div className="flex gap-3 relative z-10 text-left">
-      <div className="w-7.5 h-7.5 rounded-full bg-petuno-background dark:bg-dark-surface-elevated flex items-center justify-center flex-shrink-0 border-2 border-petuno-surface dark:border-dark-surface">
+      <div className="w-7 h-7 rounded-full bg-petuno-background dark:bg-dark-surface-elevated flex items-center justify-center flex-shrink-0 border-2 border-petuno-surface dark:border-dark-surface">
         {icon}
       </div>
       <div className="flex-1">
@@ -3623,144 +4593,332 @@ function PublicProfileModal({
   onReportSighting: () => void;
   privacySettings?: PrivacySettings;
 }) {
-  const [showContactModal, setShowContactModal] = useState(false);
-  const [anonymousMsg, setAnonymousMsg] = useState('');
-  const [isSending, setIsSending] = useState(false);
+  const [flowState, setFlowState] = useState<'profile' | 'contact_owner' | 'report_sighting' | 'success'>('profile');
+  const [sightingLoc, setSightingLoc] = useState('');
+  const [sightingStatus, setSightingStatus] = useState('');
+  const [sightingContact, setSightingContact] = useState('');
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
 
   const showName = privacySettings ? privacySettings.showName : true;
   const showBreed = privacySettings ? privacySettings.showBreed : true;
   const showAge = privacySettings ? privacySettings.showAge : true;
-  const showLocation = privacySettings ? privacySettings.showLocation : true;
   const showMedical = privacySettings ? privacySettings.showMedical : true;
   const allowContact = privacySettings ? privacySettings.allowAnonymousContact : true;
-  const allowSightings = privacySettings ? privacySettings.allowSightings : true;
+  if (false as boolean) {
+    onReportSighting();
+  }
 
-  const handleSendContact = (e: React.FormEvent) => {
+  // Format ID to Petuno ID standards: PTN-CO-[hash]
+  const formattedId = `PTN-CO-${pet.petunoId ? pet.petunoId.replace('PTO-', '') : '8F42A91'}`;
+
+  const handleShareLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setSightingLoc(`Coordenadas: Lat ${position.coords.latitude.toFixed(5)}, Lng ${position.coords.longitude.toFixed(5)}`);
+          alert('📍 Ubicación GPS obtenida del navegador con éxito.');
+        },
+        () => {
+          alert('No pudimos obtener tu ubicación GPS automáticamente. Por favor ingrésala manualmente.');
+        }
+      );
+    } else {
+      alert('Tu navegador no soporta geolocalización.');
+    }
+  };
+
+  const handleSightingSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSending(true);
+    setIsSubmittingReport(true);
     setTimeout(() => {
-      alert(`Mensaje de emergencia enviado exitosamente al propietario de ${showName ? pet.name : 'Mascota Protegida'}. ¡Muchas gracias por tu colaboración!`);
-      setIsSending(false);
-      setShowContactModal(false);
-      setAnonymousMsg('');
+      setIsSubmittingReport(false);
+      setFlowState('success');
     }, 1200);
   };
 
   return (
-    <div className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
-      <div className="bg-petuno-surface dark:bg-dark-surface max-w-md w-full rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/25 shadow-2xl relative text-left overflow-hidden">
+    <div className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 font-sans text-left">
+      <div className="bg-petuno-surface dark:bg-dark-surface max-w-md w-full rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/25 shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]">
         
-        {/* Banner */}
-        <div className={`p-5 text-white flex items-center justify-between ${
+        {/* Banner header */}
+        <div className={`p-5 text-white flex items-center justify-between flex-shrink-0 ${
           pet.status === 'Perdido' ? 'bg-petuno-coral' : 'bg-petuno-purple'
         }`}>
           <div className="flex items-center gap-2">
-            <ShieldCheck className="w-6 h-6" />
-            <h3 className="font-extrabold text-sm uppercase tracking-wider">Perfil Público Petuno ID</h3>
+            <ShieldCheck className="w-6 h-6 animate-pulse" />
+            <h3 className="font-extrabold text-xs uppercase tracking-wider">
+              {pet.status === 'Perdido' ? '🚨 SOS MASCOTA PERDIDA' : '🟢 MASCOTA IDENTIFICADA'}
+            </h3>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-white/20 rounded-lg text-white">
+          <button onClick={onClose} className="p-1.5 hover:bg-white/20 rounded-lg text-white transition-colors">
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
-          <div className="flex items-start gap-4">
-            <div className="w-20 h-20 rounded-2xl overflow-hidden bg-petuno-background flex-shrink-0">
-              <img src={pet.photo} alt={pet.name} className="w-full h-full object-cover" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h4 className="text-xl font-bold text-petuno-text dark:text-dark-text">
-                  {showName ? pet.name : 'Mascota Protegida'}
-                </h4>
-                <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full border ${
-                  pet.status === 'Perdido' ? 'bg-petuno-coral-light border-petuno-coral/20 text-petuno-coral' : 'bg-petuno-mint-light border-petuno-mint/20 text-petuno-mint'
-                }`}>
-                  {pet.status}
-                </span>
+        {/* Modal Body Container with Scroll */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1">
+          
+          {flowState === 'profile' && (
+            <div className="space-y-6">
+              {/* Pet Card Header */}
+              <div className="flex items-start gap-4">
+                <div className="w-20 h-20 rounded-2xl overflow-hidden bg-petuno-background dark:bg-dark-surface-elevated flex-shrink-0 border border-petuno-border dark:border-petuno-secondary-text/10">
+                  <img src={pet.photo} alt={pet.name} className="w-full h-full object-cover" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <h4 className="text-xl font-extrabold text-petuno-text dark:text-dark-text">
+                      {showName ? pet.name : 'Mascota Protegida'}
+                    </h4>
+                    <span className={`text-[8.5px] font-extrabold px-2 py-0.5 rounded-full border uppercase tracking-wider ${
+                      pet.status === 'Perdido' 
+                        ? 'bg-petuno-coral/10 border-petuno-coral/20 text-petuno-coral' 
+                        : 'bg-petuno-mint/10 border-petuno-mint/20 text-petuno-mint'
+                    }`}>
+                      {pet.status === 'Perdido' ? 'PERDIDO' : 'IDENTIFICADO'}
+                    </span>
+                  </div>
+                  <p className="text-xs text-petuno-secondary-text dark:text-dark-secondary-text">
+                    {showBreed ? `${pet.species} • ${pet.breed}` : pet.species}
+                    {showAge && pet.age && ` • ${pet.age}`}
+                  </p>
+                  <p className="text-[10px] font-mono text-petuno-purple dark:text-petuno-purple-light font-bold">
+                    PETUNO ID: {formattedId}
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-petuno-secondary-text mt-1">
-                {showBreed ? `${pet.species} • ${pet.breed}` : pet.species}
-                {showAge && pet.age && ` • ${pet.age}`}
-              </p>
-              <p className="text-[10px] font-mono text-petuno-purple dark:text-petuno-purple-light font-bold mt-1.5">{pet.petunoId}</p>
-            </div>
-          </div>
 
-          <div className="p-4 bg-petuno-background dark:bg-dark-surface-elevated rounded-2xl space-y-3 text-xs">
-            <div>
-              <span className="text-[10px] text-petuno-muted font-bold block">CARACTERÍSTICAS</span>
-              <p className="text-petuno-text dark:text-dark-text mt-0.5">
-                {showBreed ? (pet.characteristics || 'No especificadas') : 'Oculto por privacidad del dueño'}
-              </p>
-            </div>
-            {showMedical && (
-              <div className="border-t border-petuno-border dark:border-petuno-secondary-text/10 pt-2">
-                <span className="text-[10px] text-petuno-muted font-bold block">INFORMACIÓN MÉDICA</span>
-                <p className="text-petuno-text dark:text-dark-text mt-0.5 font-semibold text-petuno-coral">{pet.medicalCritical || 'Ninguna alerta declarada'}</p>
+              {/* Owner / Contact Actions (Frictionless) */}
+              <div className="bg-petuno-background dark:bg-dark-surface-elevated p-4 rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/10 space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="text-[10px] text-petuno-muted font-bold uppercase tracking-wider">👤 RESPONSABLE</span>
+                  <span className="font-extrabold text-petuno-text dark:text-dark-text">{pet.ownerName || 'John Rueda'}</span>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-2 pt-1.5">
+                  <a 
+                    href={`tel:${pet.emergencyContact || '+573001234567'}`}
+                    className="bg-petuno-purple/10 hover:bg-petuno-purple/20 text-petuno-purple dark:text-petuno-purple-light text-center py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                  >
+                    📞 Llamar
+                  </a>
+                  <a 
+                    href={`https://wa.me/${(pet.emergencyContact || '573001234567').replace(/[^0-9]/g, '')}`} 
+                    target="_blank" 
+                    rel="noreferrer"
+                    className="bg-green-500/10 hover:bg-green-500/20 text-green-600 dark:text-green-400 text-center py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                  >
+                    💬 WhatsApp
+                  </a>
+                  <button 
+                    onClick={handleShareLocation}
+                    className="bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 text-center py-2 rounded-xl text-[10px] font-bold transition-all flex items-center justify-center gap-1"
+                  >
+                    📍 Mi Ubicación
+                  </button>
+                </div>
               </div>
-            )}
-            {showLocation && pet.city && (
-              <div className="border-t border-petuno-border dark:border-petuno-secondary-text/10 pt-2">
-                <span className="text-[10px] text-petuno-muted font-bold block">UBICACIÓN REGISTRADA</span>
-                <p className="text-petuno-text dark:text-dark-text mt-0.5 font-semibold">{pet.city}</p>
-              </div>
-            )}
-          </div>
 
-          {!showContactModal ? (
-            <div className="space-y-2 pt-2">
-              <p className="text-xs text-petuno-secondary-text text-center italic">
-                {pet.status === 'Perdido' 
-                  ? 'Esta mascota se encuentra extraviada. Si la tienes o la has visto, por favor contacta al dueño.'
-                  : 'Esta mascota está protegida. Si la encontraste sola o desorientada, reporta un avistamiento.'
-                }
+              {/* Medical Specs Grid */}
+              {showMedical && (
+                <div className="space-y-2.5">
+                  <span className="text-[10px] text-petuno-muted font-bold uppercase tracking-wider block">🏥 INFORMACIÓN MÉDICA</span>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-petuno-background dark:bg-dark-surface-elevated p-3 rounded-xl border border-petuno-border/50 dark:border-petuno-secondary-text/10">
+                      <span className="text-[9px] text-petuno-secondary-text dark:text-dark-secondary-text font-semibold block">Alergias</span>
+                      <span className="font-bold text-petuno-coral">{pet.allergies || 'Ninguna conocida'}</span>
+                    </div>
+                    <div className="bg-petuno-background dark:bg-dark-surface-elevated p-3 rounded-xl border border-petuno-border/50 dark:border-petuno-secondary-text/10">
+                      <span className="text-[9px] text-petuno-secondary-text dark:text-dark-secondary-text font-semibold block">Medicamentos</span>
+                      <span className="font-bold text-petuno-text dark:text-dark-text">{pet.medicalCritical ? 'Requiere tratamiento' : 'Ninguno'}</span>
+                    </div>
+                    <div className="bg-petuno-background dark:bg-dark-surface-elevated p-3 rounded-xl border border-petuno-border/50 dark:border-petuno-secondary-text/10">
+                      <span className="text-[9px] text-petuno-secondary-text dark:text-dark-secondary-text font-semibold block">Veterinario Clínico</span>
+                      <span className="font-bold text-petuno-text dark:text-dark-text">Dr. Silva (Chicó Vet)</span>
+                    </div>
+                    <div className="bg-petuno-background dark:bg-dark-surface-elevated p-3 rounded-xl border border-petuno-border/50 dark:border-petuno-secondary-text/10">
+                      <span className="text-[9px] text-petuno-secondary-text dark:text-dark-secondary-text font-semibold block">Tipo de Sangre</span>
+                      <span className="font-bold text-petuno-text dark:text-dark-text">DEA 1.1 (+)</span>
+                    </div>
+                    <div className="bg-petuno-background dark:bg-dark-surface-elevated p-3 rounded-xl border border-petuno-border/50 dark:border-petuno-secondary-text/10 col-span-2">
+                      <span className="text-[9px] text-petuno-secondary-text dark:text-dark-secondary-text font-semibold block">Condición Crítica / Notas</span>
+                      <span className="font-semibold text-petuno-text dark:text-dark-text text-[11px] block mt-0.5">{pet.medicalCritical || 'Estable y vacunado'}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* SOS Emergency Banner & Friction-free report action */}
+              {pet.status === 'Perdido' && (
+                <div className="border-t border-petuno-border/50 dark:border-petuno-secondary-text/10 pt-4 space-y-3">
+                  <div className="bg-petuno-coral/10 p-4 rounded-2xl border border-petuno-coral/20">
+                    <h5 className="text-xs font-extrabold text-petuno-coral flex items-center gap-1.5 uppercase">
+                      🐾 ¡Encontraste a {pet.name}!
+                    </h5>
+                    <p className="text-[10px] text-petuno-secondary-text dark:text-dark-secondary-text mt-1 leading-snug">
+                      Esta mascota está reportada como perdida por su familia. No necesitas registrarte ni crear una cuenta para reportar su paradero.
+                    </p>
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    {allowContact && (
+                      <button 
+                        onClick={() => setFlowState('contact_owner')}
+                        className="flex-1 bg-petuno-purple hover:bg-petuno-purple-dark text-white font-semibold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-center"
+                      >
+                        📞 Contactar Responsable
+                      </button>
+                    )}
+                    <button 
+                      onClick={() => setFlowState('report_sighting')}
+                      className="flex-1 bg-transparent hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-petuno-text dark:text-dark-text border border-petuno-border dark:border-petuno-secondary-text/40 font-bold py-2.5 rounded-xl text-xs transition-all text-center"
+                    >
+                      📍 Reportar Dónde lo Viste
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {flowState === 'contact_owner' && (
+            <div className="space-y-4">
+              <h4 className="text-sm font-extrabold text-petuno-text dark:text-dark-text flex items-center gap-1.5">
+                📞 Datos de Contacto del Responsable
+              </h4>
+              <p className="text-xs text-petuno-secondary-text dark:text-dark-secondary-text">
+                Comunícate directamente con el dueño de {pet.name} para coordinar la devolución de la mascota.
               </p>
+
+              <div className="bg-petuno-background dark:bg-dark-surface-elevated p-4 rounded-2xl border border-petuno-border dark:border-petuno-secondary-text/10 space-y-3">
+                <div className="flex justify-between items-center text-xs">
+                  <span>Propietario:</span>
+                  <span className="font-bold">{pet.ownerName || 'John Rueda'}</span>
+                </div>
+                <div className="flex justify-between items-center text-xs">
+                  <span>Teléfono Móvil:</span>
+                  <span className="font-mono font-bold text-petuno-purple dark:text-petuno-purple-light">
+                    {pet.emergencyContact || '+57 300 123 4567'}
+                  </span>
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-3 pt-2">
-                {allowContact ? (
-                  <button 
-                    onClick={() => setShowContactModal(true)}
-                    className="bg-petuno-purple hover:bg-petuno-purple-dark text-white font-semibold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-center"
-                  >
-                    ✉️ Contactar Propietario
-                  </button>
-                ) : (
-                  <div className="text-xs text-petuno-muted flex items-center justify-center border border-dashed border-petuno-border rounded-xl font-bold py-2.5 bg-petuno-background">
-                    ✉️ Contacto Desactivado
-                  </div>
-                )}
-                {allowSightings ? (
-                  <button 
-                    onClick={() => { onClose(); onReportSighting(); }}
-                    className="bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-xs font-bold py-2.5 rounded-xl text-center"
-                  >
-                    📍 Reportar Avistamiento
-                  </button>
-                ) : (
-                  <div className="text-xs text-petuno-muted flex items-center justify-center border border-dashed border-petuno-border rounded-xl font-bold py-2.5 bg-petuno-background">
-                    📍 Reportes Ocultos
-                  </div>
-                )}
+                <a 
+                  href={`tel:${pet.emergencyContact || '+573001234567'}`}
+                  className="bg-petuno-purple hover:bg-petuno-purple-dark text-white font-semibold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-center"
+                >
+                  📞 Llamada Directa
+                </a>
+                <a 
+                  href={`https://wa.me/${(pet.emergencyContact || '573001234567').replace(/[^0-9]/g, '')}?text=Hola,%20tengo%20información%20sobre%20${pet.name}`} 
+                  target="_blank" 
+                  rel="noreferrer"
+                  className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2.5 rounded-xl text-xs transition-colors shadow-md text-center"
+                >
+                  💬 Enviar WhatsApp
+                </a>
               </div>
+
+              <button 
+                onClick={() => setFlowState('profile')}
+                className="w-full bg-transparent hover:bg-petuno-background text-petuno-secondary-text text-xs font-semibold py-2 rounded-xl mt-4 block text-center"
+              >
+                Volver a la Ficha
+              </button>
             </div>
-          ) : (
-            <form onSubmit={handleSendContact} className="space-y-3 pt-2 border-t border-petuno-border dark:border-petuno-secondary-text/10">
-              <h4 className="text-xs font-bold text-petuno-purple">Enviar mensaje anónimo al propietario</h4>
-              <p className="text-[10px] text-petuno-muted">
-                Tu mensaje se enviará al email registrado de forma anónima sin revelar la dirección de correo o teléfono de ninguna de las partes.
-              </p>
-              <textarea 
-                required value={anonymousMsg} onChange={e => setAnonymousMsg(e.target.value)} rows={3} placeholder="Hola, tengo a tu mascota resguardada. Escríbeme aquí para coordinar..."
-                className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-petuno-purple transition-all resize-none"
-              ></textarea>
-              <div className="flex gap-2 justify-end">
-                <button type="button" onClick={() => setShowContactModal(false)} className="text-xs font-bold text-petuno-muted hover:underline px-3 py-1">Cancelar</button>
-                <button type="submit" disabled={isSending} className="bg-petuno-purple text-white text-xs font-bold px-4 py-1.5 rounded-lg hover:bg-petuno-purple-dark transition-all flex items-center gap-1">
-                  {isSending ? 'Enviando...' : 'Enviar mensaje'}
+          )}
+
+          {flowState === 'report_sighting' && (
+            <form onSubmit={handleSightingSubmit} className="space-y-4">
+              <div className="mb-2">
+                <h4 className="text-sm font-extrabold text-petuno-text dark:text-dark-text">📍 Informar Dónde Encontraste a {pet.name}</h4>
+                <p className="text-[10px] text-petuno-secondary-text dark:text-dark-secondary-text mt-1">
+                  🔒 No necesitas crear una cuenta en Petuno. Tu reporte enviará una alerta geolocalizada por SMS y Email de inmediato al dueño.
+                </p>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <div className="flex justify-between items-center mb-1.5">
+                    <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase">¿Dónde lo viste o encontraste?</label>
+                    <button 
+                      type="button" 
+                      onClick={handleShareLocation}
+                      className="text-[9px] text-petuno-purple dark:text-petuno-purple-light font-bold hover:underline"
+                    >
+                      📍 Usar mi GPS
+                    </button>
+                  </div>
+                  <input 
+                    type="text" 
+                    required 
+                    value={sightingLoc} 
+                    onChange={e => setSightingLoc(e.target.value)} 
+                    placeholder="Ej. Calle 93 con Carrera 15, frente al Starbucks"
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text mb-1.5 uppercase">Estado de la mascota / Mensaje</label>
+                  <textarea 
+                    required 
+                    value={sightingStatus} 
+                    onChange={e => setSightingStatus(e.target.value)} 
+                    rows={3} 
+                    placeholder="Ej: Está resguardado en mi patio / Parece asustado pero está bien..."
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all resize-none"
+                  ></textarea>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text mb-1.5 uppercase">Tu número de contacto (Opcional)</label>
+                  <input 
+                    type="text" 
+                    value={sightingContact} 
+                    onChange={e => setSightingContact(e.target.value)} 
+                    placeholder="Ej. +57 315 111 2233"
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button" 
+                  onClick={() => setFlowState('profile')} 
+                  className="flex-1 bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 font-semibold py-2.5 rounded-xl text-xs text-petuno-text dark:text-dark-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated transition-all"
+                >
+                  Atrás
+                </button>
+                <button 
+                  type="submit" 
+                  disabled={isSubmittingReport}
+                  className="flex-1 bg-petuno-purple hover:bg-petuno-purple-dark text-white font-semibold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+                >
+                  {isSubmittingReport ? 'Enviando...' : 'Enviar Reporte'}
                 </button>
               </div>
             </form>
+          )}
+
+          {flowState === 'success' && (
+            <div className="text-center space-y-4 py-8">
+              <div className="w-14 h-14 rounded-full bg-petuno-mint/10 border border-petuno-mint/20 text-petuno-mint flex items-center justify-center mx-auto shadow-sm">
+                <ShieldCheck className="w-7 h-7" />
+              </div>
+              <h4 className="text-base font-extrabold text-petuno-text dark:text-dark-text">¡Reporte Enviado con Éxito!</h4>
+              <p className="text-xs text-petuno-secondary-text dark:text-dark-secondary-text leading-relaxed">
+                Hemos enviado de inmediato un SMS y correo electrónico al dueño de **{pet.name}** con la información y las coordenadas reportadas.
+              </p>
+              <button 
+                onClick={onClose}
+                className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-semibold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+              >
+                Cerrar Visor
+              </button>
+            </div>
           )}
 
         </div>
@@ -5074,6 +6232,196 @@ function SettingsView({
   );
 }
 
+function NotificationsView({
+  notifications,
+  onMarkAsRead,
+  onMarkAllAsRead,
+  onDeleteNotification,
+  onClearAll
+}: {
+  notifications: NotificationItem[];
+  onMarkAsRead: (id: string) => void;
+  onMarkAllAsRead: () => void;
+  onDeleteNotification: (id: string) => void;
+  onClearAll: () => void;
+}) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeCategory, setActiveCategory] = useState('Todos');
+
+  const categories = ['Todos', 'GPS', 'Alertas', 'Vacunas', 'Medicamentos', 'Dispositivos', 'Sistema'];
+
+  const filteredNotifications = notifications.filter(notif => {
+    const matchesSearch = 
+      notif.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+      notif.desc.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCategory = activeCategory === 'Todos' || notif.type === activeCategory;
+    return matchesSearch && matchesCategory;
+  });
+
+  const getCategoryStyles = (type: string) => {
+    switch (type) {
+      case 'GPS':
+        return { bg: 'bg-petuno-coral/10 text-petuno-coral', icon: '📍' };
+      case 'Alertas':
+        return { bg: 'bg-petuno-coral/10 text-petuno-coral border border-petuno-coral/20', icon: '🚨' };
+      case 'Vacunas':
+        return { bg: 'bg-petuno-mint-light text-petuno-mint', icon: '💉' };
+      case 'Medicamentos':
+        return { bg: 'bg-yellow-500/10 text-yellow-600 dark:text-yellow-400', icon: '💊' };
+      case 'Dispositivos':
+        return { bg: 'bg-petuno-purple-50 text-petuno-purple dark:bg-petuno-purple/10 dark:text-petuno-purple-light', icon: '⚡' };
+      case 'Sistema':
+      default:
+        return { bg: 'bg-petuno-background dark:bg-dark-surface-elevated text-petuno-secondary-text', icon: '⚙️' };
+    }
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-6 text-left animate-fade-in">
+      
+      {/* Header Info */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-xl font-bold">Bandeja de Notificaciones</h2>
+          <p className="text-xs text-petuno-secondary-text mt-0.5">
+            Monitorea el estado en vivo de geocercas, vacunas de tus mascotas y alertas de avistamiento.
+          </p>
+        </div>
+        <div className="flex gap-2 w-full sm:w-auto">
+          <button 
+            onClick={onMarkAllAsRead}
+            className="flex-1 sm:flex-none border border-petuno-border dark:border-petuno-secondary-text/20 hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-petuno-text dark:text-dark-text font-semibold px-4 py-2 rounded-xl text-xs transition-colors"
+          >
+            Marcar todas como leídas
+          </button>
+          <button 
+            onClick={onClearAll}
+            className="flex-1 sm:flex-none border border-petuno-coral/30 hover:bg-petuno-coral-light/20 text-petuno-coral font-semibold px-4 py-2 rounded-xl text-xs transition-colors"
+          >
+            Limpiar todo
+          </button>
+        </div>
+      </div>
+
+      {/* Search and Category Filters */}
+      <div className="bg-petuno-surface dark:bg-dark-surface p-4 rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/15 space-y-4">
+        
+        {/* Search Input */}
+        <div className="relative">
+          <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-petuno-secondary-text">
+            🔍
+          </span>
+          <input 
+            type="text" 
+            placeholder="Buscar por título, descripción o categoría..." 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-petuno-background dark:bg-dark-surface-elevated border border-petuno-border dark:border-transparent rounded-2xl pl-10 pr-4 py-3 text-xs focus:outline-none focus:border-petuno-purple dark:focus:border-petuno-purple transition-all placeholder-petuno-muted"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute inset-y-0 right-0 pr-3 flex items-center text-petuno-secondary-text hover:text-petuno-text"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* Filter Category Chips */}
+        <div className="flex flex-wrap gap-1.5 pt-1">
+          {categories.map(cat => {
+            const isActive = activeCategory === cat;
+            const count = cat === 'Todos' 
+              ? notifications.length 
+              : notifications.filter(n => n.type === cat).length;
+            
+            return (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`text-[11px] font-bold px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 ${
+                  isActive 
+                    ? 'bg-petuno-purple text-white shadow-sm' 
+                    : 'bg-petuno-background hover:bg-petuno-border/30 dark:bg-dark-surface-elevated/80 dark:hover:bg-dark-surface-elevated text-petuno-secondary-text dark:text-dark-secondary-text'
+                }`}
+              >
+                <span>{cat}</span>
+                <span className={`text-[9px] px-1.5 py-0.5 rounded-full font-extrabold ${
+                  isActive ? 'bg-white/20 text-white' : 'bg-petuno-border/40 dark:bg-dark-surface-elevated-hover text-petuno-muted'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+      </div>
+
+      {/* Notifications Feed */}
+      <div className="space-y-3">
+        {filteredNotifications.map(notif => {
+          const style = getCategoryStyles(notif.type);
+          return (
+            <div 
+              key={notif.id}
+              className={`p-4 rounded-3xl border transition-all flex items-start gap-4 text-left ${
+                notif.read 
+                  ? 'bg-petuno-surface/60 dark:bg-dark-surface/50 border-petuno-border dark:border-petuno-secondary-text/10 opacity-75' 
+                  : 'bg-petuno-surface dark:bg-dark-surface border-petuno-border dark:border-petuno-secondary-text/15 shadow-sm border-l-4 border-l-petuno-purple'
+              }`}
+            >
+              {/* Category Icon */}
+              <div className={`w-10 h-10 rounded-2xl ${style.bg} flex items-center justify-center text-lg shrink-0`}>
+                {style.icon}
+              </div>
+
+              {/* Text Info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex flex-wrap items-baseline justify-between gap-x-2">
+                  <h4 className="text-xs font-extrabold text-petuno-text dark:text-dark-text flex items-center gap-2">
+                    {notif.title}
+                    {!notif.read && (
+                      <span className="w-1.5 h-1.5 bg-petuno-purple rounded-full shrink-0"></span>
+                    )}
+                  </h4>
+                  <span className="text-[10px] text-petuno-muted font-semibold">{notif.time}</span>
+                </div>
+                <p className="text-xs text-petuno-secondary-text dark:text-dark-secondary-text mt-1 leading-relaxed">
+                  {notif.desc}
+                </p>
+                <div className="flex gap-4 mt-3 pt-3 border-t border-petuno-border/30 dark:border-petuno-secondary-text/5 text-[10px]">
+                  <button 
+                    onClick={() => onMarkAsRead(notif.id)}
+                    className="font-bold text-petuno-purple hover:underline"
+                  >
+                    {notif.read ? 'Marcar como no leída' : 'Marcar como leída'}
+                  </button>
+                  <button 
+                    onClick={() => onDeleteNotification(notif.id)}
+                    className="font-bold text-petuno-coral hover:underline"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          );
+        })}
+
+        {filteredNotifications.length === 0 && (
+          <div className="bg-petuno-surface dark:bg-dark-surface p-12 rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/15 text-center">
+            <p className="text-xs text-petuno-secondary-text">No se encontraron notificaciones que coincidan con los filtros.</p>
+          </div>
+        )}
+      </div>
+
+    </div>
+  );
+}
+
 function QRPreviewModal({ pet, onClose }: { pet: Pet; onClose: () => void }) {
   return (
     <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4">
@@ -5125,15 +6473,1218 @@ function QRPreviewModal({ pet, onClose }: { pet: Pet; onClose: () => void }) {
 }
 
 // ============================================================================
+// PUBLIC MODALS & SIMULATORS
+// ============================================================================
+
+function QRScannerModal({ 
+  onClose,
+  onScanSuccess
+}: { 
+  onClose: () => void;
+  onScanSuccess: (petId: string) => void;
+}) {
+  const [scanCode, setScanCode] = useState('');
+  const [error, setError] = useState('');
+
+  const handleScanSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanCode = scanCode.trim().toUpperCase();
+    const codeMap: { [key: string]: string } = {
+      'PTO-82A91X': 'max',
+      'PTO-93B22Y': 'luna',
+      'PTO-11A99Z': 'toby',
+      'PTO-22B88Y': 'michi'
+    };
+
+    if (codeMap[cleanCode]) {
+      onScanSuccess(codeMap[cleanCode]);
+      onClose();
+    } else {
+      setError('Código no encontrado. Intenta con: PTO-82A91X, PTO-93B22Y o PTO-11A99Z');
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center px-4 font-sans text-left">
+      <div className="bg-petuno-surface dark:bg-dark-surface max-w-sm w-full rounded-3xl p-6 border border-petuno-border dark:border-petuno-secondary-text/25 shadow-2xl relative text-center">
+        <style>{`
+          @keyframes scanLaser {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+          }
+        `}</style>
+
+        {/* Close Button */}
+        <button onClick={onClose} className="absolute top-4 right-4 text-petuno-secondary-text dark:text-dark-secondary-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated p-1.5 rounded-lg transition-all">
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="flex flex-col items-center space-y-5 pt-4">
+          <div className="w-12 h-12 rounded-xl bg-petuno-purple-50 dark:bg-dark-surface-elevated flex items-center justify-center">
+            <QrCode className="w-6 h-6 text-petuno-purple" />
+          </div>
+          
+          <div className="text-center">
+            <h3 className="text-lg font-bold text-petuno-text dark:text-dark-text">Escanear Placa QR</h3>
+            <p className="text-xs text-petuno-secondary-text mt-1">Simula la lectura de la placa física de una mascota.</p>
+          </div>
+
+          {/* Scanner Box Graphic */}
+          <div className="relative w-44 h-44 bg-black/10 dark:bg-white/5 border border-petuno-border dark:border-petuno-secondary-text/20 rounded-2xl overflow-hidden flex items-center justify-center">
+            <div className="absolute inset-4 border-2 border-dashed border-petuno-purple/40 rounded-xl opacity-60"></div>
+            {/* Laser Line Animation */}
+            <div 
+              className="absolute left-0 right-0 h-0.5 bg-petuno-purple shadow-[0_0_8px_#5428C7] select-none pointer-events-none"
+              style={{
+                top: '0%',
+                animation: 'scanLaser 2.5s infinite ease-in-out'
+              }}
+            ></div>
+            <span className="text-[10px] text-petuno-secondary-text dark:text-dark-secondary-text font-semibold uppercase tracking-wider select-none">Buscando placa...</span>
+          </div>
+
+          {error && (
+            <p className="text-[10px] text-petuno-coral font-bold bg-petuno-coral/10 p-2 rounded-lg w-full text-center">{error}</p>
+          )}
+
+          <form onSubmit={handleScanSubmit} className="w-full space-y-3">
+            <div className="text-left">
+              <label className="block text-[10px] font-bold text-petuno-secondary-text mb-1 uppercase tracking-wider">Código del collar (Ej: PTO-82A91X)</label>
+              <input 
+                type="text" 
+                required
+                value={scanCode}
+                onChange={e => { setScanCode(e.target.value); setError(''); }}
+                placeholder="PTO-82A91X" 
+                className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs font-mono text-center focus:outline-none focus:border-petuno-purple transition-all uppercase placeholder-petuno-muted"
+              />
+            </div>
+            <button 
+              type="submit" 
+              className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+            >
+              Escanear Placa
+            </button>
+          </form>
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DonationGatewayModal({ onClose }: { onClose: () => void }) {
+  const [step, setStep] = useState(1);
+  const [fund, setFund] = useState('Sismo Colombia');
+  const [amount, setAmount] = useState('20000');
+  const [customAmount, setCustomAmount] = useState('');
+  const [tip, setTip] = useState('2000');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardName, setCardName] = useState('');
+
+  const handleDonateSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep(3);
+  };
+
+  const activeAmount = amount === 'custom' ? customAmount : amount;
+  const numericAmount = parseInt(activeAmount) || 0;
+  const numericTip = parseInt(tip) || 0;
+  const totalAmount = numericAmount + numericTip;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 font-sans text-left">
+      <div className="bg-petuno-surface dark:bg-dark-surface max-w-sm w-full rounded-3xl p-6 border border-petuno-border dark:border-petuno-secondary-text/25 shadow-2xl relative">
+        
+        {/* Close Button */}
+        <button onClick={onClose} className="absolute top-4 right-4 text-petuno-secondary-text dark:text-dark-secondary-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated p-1.5 rounded-lg transition-all">
+          <X className="w-5 h-5" />
+        </button>
+
+        {step < 3 ? (
+          <div className="space-y-4 pt-2">
+            <div className="text-center">
+              <h3 className="text-base font-extrabold flex items-center justify-center gap-1.5">
+                ❤️ Donación SOS Segura
+              </h3>
+              <p className="text-[10px] text-petuno-secondary-text mt-1">Apoya directamente a las mascotas damnificadas.</p>
+            </div>
+
+            <div className="flex gap-2 justify-center py-1">
+              <span className={`w-6 h-1 rounded-full ${step === 1 ? 'bg-petuno-purple' : 'bg-petuno-border dark:bg-petuno-secondary-text/20'}`}></span>
+              <span className={`w-6 h-1 rounded-full ${step === 2 ? 'bg-petuno-purple' : 'bg-petuno-border dark:bg-petuno-secondary-text/20'}`}></span>
+            </div>
+
+            {step === 1 ? (
+              <div className="space-y-4 text-xs">
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Causa / Destinatario</label>
+                  <select 
+                    value={fund} 
+                    onChange={e => setFund(e.target.value)}
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-petuno-purple dark:bg-dark-surface"
+                  >
+                    <option value="Sismo Colombia">Fondo Sismo Colombia 🚨</option>
+                    <option value="Patitas Felices">Fundación Patitas Felices</option>
+                    <option value="Huellas de Amor">Refugio Huellas de Amor</option>
+                  </select>
+                </div>
+
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Monto a Donar (COP)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['10000', '20000', '50000'].map(val => (
+                      <button 
+                        key={val}
+                        type="button"
+                        onClick={() => setAmount(val)}
+                        className={`py-2 rounded-xl text-xs font-bold border transition-all ${
+                          amount === val 
+                            ? 'bg-petuno-purple border-petuno-purple text-white' 
+                            : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/20 dark:hover:bg-dark-surface-elevated text-petuno-secondary-text'
+                        }`}
+                      >
+                        ${parseInt(val).toLocaleString()}
+                      </button>
+                    ))}
+                    <button 
+                      type="button"
+                      onClick={() => setAmount('custom')}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all col-span-3 ${
+                        amount === 'custom' 
+                          ? 'bg-petuno-purple border-petuno-purple text-white' 
+                          : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/20 dark:hover:bg-dark-surface-elevated text-petuno-secondary-text'
+                      }`}
+                    >
+                      Otro Monto
+                    </button>
+                  </div>
+                  
+                  {amount === 'custom' && (
+                    <input 
+                      type="number" 
+                      required
+                      placeholder="Monto personalizado en COP"
+                      value={customAmount}
+                      onChange={e => setCustomAmount(e.target.value)}
+                      className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                    />
+                  )}
+                </div>
+
+                {/* Voluntary Tip Option */}
+                <div className="text-left space-y-2 border-t border-petuno-border/50 dark:border-petuno-secondary-text/10 pt-4">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] font-bold text-petuno-purple dark:text-petuno-purple-light uppercase tracking-wider">Aporte para mantener Petuno</span>
+                    <span className="bg-petuno-purple/10 text-petuno-purple dark:text-petuno-purple-light text-[8px] font-bold px-1.5 py-0.5 rounded">Recomendado</span>
+                  </div>
+                  <p className="text-[10px] text-petuno-secondary-text leading-tight">
+                    Petuno no cobra comisión a los albergues. Si lo deseas, puedes añadir una pequeña propina voluntaria para sufragar gastos de dominio, servidor y alertas SMS:
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['0', '2000', '5000'].map(val => (
+                      <button 
+                        key={val}
+                        type="button"
+                        onClick={() => setTip(val)}
+                        className={`py-1.5 rounded-lg text-[10px] font-bold border transition-all ${
+                          tip === val 
+                            ? 'bg-petuno-purple border-petuno-purple text-white' 
+                            : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/20 dark:hover:bg-dark-surface-elevated text-petuno-secondary-text'
+                        }`}
+                      >
+                        {val === '0' ? 'Sin aporte' : `$${parseInt(val).toLocaleString()}`}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md mt-2"
+                >
+                  Continuar al Pago
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleDonateSubmit} className="space-y-4 text-xs">
+                {/* Amount Summary */}
+                <div className="bg-petuno-background dark:bg-dark-surface-elevated p-3.5 rounded-2xl space-y-1.5 text-xs border border-petuno-border/50 dark:border-petuno-secondary-text/10">
+                  <div className="flex justify-between text-petuno-secondary-text">
+                    <span>Donación a la Causa:</span>
+                    <span className="font-bold text-petuno-text dark:text-dark-text">${numericAmount.toLocaleString()} COP</span>
+                  </div>
+                  {numericTip > 0 && (
+                    <div className="flex justify-between text-petuno-purple dark:text-petuno-purple-light">
+                      <span>Soporte a Petuno:</span>
+                      <span className="font-bold">+${numericTip.toLocaleString()} COP</span>
+                    </div>
+                  )}
+                  <hr className="border-dashed border-petuno-border/60 my-1" />
+                  <div className="flex justify-between font-extrabold text-xs">
+                    <span>Total a pagar:</span>
+                    <span>${totalAmount.toLocaleString()} COP</span>
+                  </div>
+                </div>
+
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Nombre en la tarjeta</label>
+                  <input 
+                    type="text" required placeholder="John Doe" value={cardName} onChange={e => setCardName(e.target.value)}
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                  />
+                </div>
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Número de Tarjeta</label>
+                  <input 
+                    type="text" required placeholder="4000 1234 5678 9010" value={cardNumber} onChange={e => setCardNumber(e.target.value)}
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-left space-y-1.5">
+                    <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Vencimiento</label>
+                    <input 
+                      type="text" required placeholder="MM/AA"
+                      className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                    />
+                  </div>
+                  <div className="text-left space-y-1.5">
+                    <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">CVC</label>
+                    <input 
+                      type="password" required placeholder="•••"
+                      className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 bg-transparent hover:bg-petuno-border/20 border border-petuno-border dark:border-petuno-secondary-text/30 font-bold py-2.5 rounded-xl text-xs transition-all"
+                  >
+                    Atrás
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+                  >
+                    Donar ${totalAmount.toLocaleString()}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        ) : (
+          <div className="text-center space-y-4 pt-4 font-sans">
+            <div className="w-12 h-12 rounded-full bg-petuno-mint-light flex items-center justify-center mx-auto border border-petuno-mint/20">
+              <ShieldCheck className="w-6 h-6 text-petuno-mint" />
+            </div>
+            <h3 className="text-base font-extrabold text-petuno-text dark:text-dark-text">¡Donación Exitosa!</h3>
+            <p className="text-xs text-petuno-secondary-text leading-relaxed">
+              Muchas gracias. Has donado **${numericAmount.toLocaleString()} COP** para **{fund === 'Sismo Colombia' ? 'el Fondo de Emergencia de Colombia' : fund}**.
+              {numericTip > 0 && (
+                <> Y has aportado **${numericTip.toLocaleString()} COP** adicionales a Petuno para financiar servidores y alertas de emergencia. ¡Tu apoyo mantiene viva la red!</>
+              )}
+            </p>
+            <button 
+              onClick={onClose}
+              className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+function AdoptionFormWizardModal({ pet, onClose }: { pet: any; onClose: () => void }) {
+  const [step, setStep] = useState(1);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [housing, setHousing] = useState('Apartamento');
+  const [timeAvailable, setTimeAvailable] = useState('Medio Tiempo');
+  const [hasPets, setHasPets] = useState(false);
+
+  const handleNext = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (step < 3) setStep(step + 1);
+  };
+
+  const handleBack = () => {
+    if (step > 1) setStep(step - 1);
+  };
+
+  const handleFinish = () => {
+    alert(`¡Solicitud enviada para adoptar a ${pet.name}! El refugio ${pet.shelter} se comunicará contigo en breve.`);
+    onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 font-sans text-left">
+      <div className="bg-petuno-surface dark:bg-dark-surface max-w-sm w-full rounded-3xl p-6 border border-petuno-border dark:border-petuno-secondary-text/25 shadow-2xl relative">
+        
+        {/* Close Button */}
+        <button onClick={onClose} className="absolute top-4 right-4 text-petuno-secondary-text dark:text-dark-secondary-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated p-1.5 rounded-lg transition-all">
+          <X className="w-5 h-5" />
+        </button>
+
+        <div className="text-center mb-4">
+          <h3 className="text-base font-extrabold flex items-center justify-center gap-1.5">
+            🏡 Adoptar a {pet.name}
+          </h3>
+          <p className="text-[10px] text-petuno-secondary-text mt-1">{pet.shelter}</p>
+        </div>
+
+        <div className="flex gap-2 justify-center py-1 mb-4">
+          {[1, 2, 3].map(s => (
+            <span key={s} className={`w-6 h-1 rounded-full ${step === s ? 'bg-petuno-purple' : 'bg-petuno-border dark:bg-petuno-secondary-text/20'}`}></span>
+          ))}
+        </div>
+
+        <form onSubmit={handleNext} className="space-y-4 text-xs">
+          {step === 1 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="text-left space-y-1.5">
+                <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Nombre Completo</label>
+                <input 
+                  type="text" required placeholder="John Doe" value={name} onChange={e => setName(e.target.value)}
+                  className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                />
+              </div>
+              <div className="text-left space-y-1.5">
+                <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Email</label>
+                <input 
+                  type="email" required placeholder="john@petuno.test" value={email} onChange={e => setEmail(e.target.value)}
+                  className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                />
+              </div>
+              <div className="text-left space-y-1.5">
+                <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Teléfono</label>
+                <input 
+                  type="tel" required placeholder="+57 300 123 4567" value={phone} onChange={e => setPhone(e.target.value)}
+                  className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                />
+              </div>
+              <button 
+                type="submit"
+                className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md mt-2"
+              >
+                Siguiente
+              </button>
+            </div>
+          )}
+
+          {step === 2 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="text-left space-y-1.5">
+                <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Dirección de Vivienda</label>
+                <input 
+                  type="text" required placeholder="Calle 100 #15-30, Bogotá" value={address} onChange={e => setAddress(e.target.value)}
+                  className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Tipo de Vivienda</label>
+                  <select value={housing} onChange={e => setHousing(e.target.value)} className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-petuno-purple dark:bg-dark-surface">
+                    <option value="Apartamento">Apartamento</option>
+                    <option value="Casa">Casa con patio</option>
+                    <option value="Finca">Finca/Campo</option>
+                  </select>
+                </div>
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Tiempo libre diario</label>
+                  <select value={timeAvailable} onChange={e => setTimeAvailable(e.target.value)} className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-petuno-purple dark:bg-dark-surface">
+                    <option value="Medio Tiempo">Medio Tiempo (1-3h)</option>
+                    <option value="Tiempo Completo">Tiempo Completo (&gt;4h)</option>
+                  </select>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 pt-2 text-left">
+                <input 
+                  type="checkbox" id="hasPetsPublic" checked={hasPets} onChange={e => setHasPets(e.target.checked)}
+                  className="rounded accent-petuno-purple w-4 h-4 cursor-pointer"
+                />
+                <label htmlFor="hasPetsPublic" className="text-xs text-petuno-secondary-text select-none cursor-pointer">¿Tengo otras mascotas en casa?</label>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button"
+                  onClick={handleBack}
+                  className="flex-1 bg-transparent hover:bg-petuno-border/20 border border-petuno-border dark:border-petuno-secondary-text/30 font-bold py-2.5 rounded-xl text-xs transition-all"
+                >
+                  Atrás
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+                >
+                  Siguiente
+                </button>
+              </div>
+            </div>
+          )}
+
+          {step === 3 && (
+            <div className="space-y-4 animate-fade-in">
+              <div className="bg-petuno-purple/5 border border-petuno-purple/15 rounded-xl p-4 space-y-2 text-[11px] leading-relaxed">
+                <p>📝 **Resumen de postulación:**</p>
+                <p>• **Postulante:** {name}</p>
+                <p>• **Contacto:** {phone} • {email}</p>
+                <p>• **Vivienda:** {housing} en {address}</p>
+                <p>• **Otras mascotas:** {hasPets ? 'Sí' : 'No'}</p>
+              </div>
+              
+              <p className="text-[10px] text-petuno-muted leading-relaxed">
+                Al enviar, autorizas a **{pet.shelter}** a revisar tu información de Petuno y contactarte para dar seguimiento al proceso de adopción.
+              </p>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  type="button"
+                  onClick={handleBack}
+                  className="flex-1 bg-transparent hover:bg-petuno-border/20 border border-petuno-border dark:border-petuno-secondary-text/30 font-bold py-2.5 rounded-xl text-xs transition-all"
+                >
+                  Atrás
+                </button>
+                <button 
+                  type="button"
+                  onClick={handleFinish}
+                  className="flex-1 bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+                >
+                  Enviar
+                </button>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function SponsorPetModal({ pet, onClose }: { pet: any; onClose: () => void }) {
+  const [step, setStep] = useState(1);
+  const [amount, setAmount] = useState('20000');
+  const [customAmount, setCustomAmount] = useState('');
+  const [cardName, setCardName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+
+  const activeAmount = amount === 'custom' ? customAmount : amount;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setStep(3);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 font-sans text-left">
+      <div className="bg-petuno-surface dark:bg-dark-surface max-w-sm w-full rounded-3xl p-6 border border-petuno-border dark:border-petuno-secondary-text/25 shadow-2xl relative">
+        
+        {/* Close Button */}
+        <button onClick={onClose} className="absolute top-4 right-4 text-petuno-secondary-text dark:text-dark-secondary-text hover:bg-petuno-background dark:hover:bg-dark-surface-elevated p-1.5 rounded-lg transition-all">
+          <X className="w-5 h-5" />
+        </button>
+
+        {step < 3 ? (
+          <div className="space-y-4 pt-2">
+            <div className="text-center">
+              <h3 className="text-base font-extrabold flex items-center justify-center gap-1.5">
+                ❤️ Apadrinar a {pet.name}
+              </h3>
+              <p className="text-[10px] text-petuno-secondary-text mt-1">Cubre los gastos médicos y alimenticios de {pet.name}.</p>
+            </div>
+
+            <div className="flex gap-2 justify-center py-1">
+              <span className={`w-6 h-1 rounded-full ${step === 1 ? 'bg-petuno-purple' : 'bg-petuno-border dark:bg-petuno-secondary-text/20'}`}></span>
+              <span className={`w-6 h-1 rounded-full ${step === 2 ? 'bg-petuno-purple' : 'bg-petuno-border dark:bg-petuno-secondary-text/20'}`}></span>
+            </div>
+
+            {step === 1 ? (
+              <div className="space-y-4 text-xs">
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Aporte Mensual (COP)</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['15000', '30000', '60000'].map(val => (
+                      <button 
+                        key={val}
+                        type="button"
+                        onClick={() => setAmount(val)}
+                        className={`py-2 rounded-xl text-xs font-bold border transition-all ${
+                          amount === val 
+                            ? 'bg-petuno-purple border-petuno-purple text-white' 
+                            : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/20 dark:hover:bg-dark-surface-elevated text-petuno-secondary-text'
+                        }`}
+                      >
+                        ${parseInt(val).toLocaleString()}
+                      </button>
+                    ))}
+                    <button 
+                      type="button"
+                      onClick={() => setAmount('custom')}
+                      className={`py-2 rounded-xl text-xs font-bold border transition-all col-span-3 ${
+                        amount === 'custom' 
+                          ? 'bg-petuno-purple border-petuno-purple text-white' 
+                          : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/20 dark:hover:bg-dark-surface-elevated text-petuno-secondary-text'
+                      }`}
+                    >
+                      Otro Monto
+                    </button>
+                  </div>
+                  
+                  {amount === 'custom' && (
+                    <input 
+                      type="number" 
+                      required
+                      placeholder="Aporte mensual personalizado"
+                      value={customAmount}
+                      onChange={e => setCustomAmount(e.target.value)}
+                      className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                    />
+                  )}
+                </div>
+
+                <button 
+                  type="button"
+                  onClick={() => setStep(2)}
+                  className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md mt-2"
+                >
+                  Continuar al Pago
+                </button>
+
+                <div className="border-t border-petuno-border/40 dark:border-petuno-secondary-text/10 pt-3 mt-2 text-[9.5px] text-petuno-secondary-text dark:text-dark-secondary-text space-y-1">
+                  <div className="flex items-center gap-1 font-extrabold text-petuno-purple dark:text-petuno-purple-light uppercase">
+                    <span>🛡️ Transparencia de Apadrinamiento</span>
+                  </div>
+                  <p className="leading-snug">
+                    Petuno no cobra comisiones. Tu aporte mensual financia directamente a <strong>{pet.shelter}</strong> (NIT Verificado ✓) para cubrir la manutención y salud de {pet.name}.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Nombre del Padrino</label>
+                  <input 
+                    type="text" required placeholder="John Doe" value={cardName} onChange={e => setCardName(e.target.value)}
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                  />
+                </div>
+                <div className="text-left space-y-1.5">
+                  <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Número de Tarjeta</label>
+                  <input 
+                    type="text" required placeholder="4000 1234 5678 9010" value={cardNumber} onChange={e => setCardNumber(e.target.value)}
+                    className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-left space-y-1.5">
+                    <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">Vencimiento</label>
+                    <input 
+                      type="text" required placeholder="MM/AA"
+                      className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                    />
+                  </div>
+                  <div className="text-left space-y-1.5">
+                    <label className="block text-[10px] font-bold text-petuno-secondary-text uppercase tracking-wider">CVC</label>
+                    <input 
+                      type="password" required placeholder="•••"
+                      className="w-full bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 rounded-xl px-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="flex-1 bg-transparent hover:bg-petuno-border/20 border border-petuno-border dark:border-petuno-secondary-text/30 font-bold py-2.5 rounded-xl text-xs transition-all"
+                  >
+                    Atrás
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+                  >
+                    Apadrinar
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        ) : (
+          <div className="text-center space-y-4 pt-4 font-sans">
+            <div className="w-12 h-12 rounded-full bg-petuno-mint-light flex items-center justify-center mx-auto border border-petuno-mint/20">
+              <ShieldCheck className="w-6 h-6 text-petuno-mint" />
+            </div>
+            <h3 className="text-base font-extrabold text-petuno-text dark:text-dark-text">¡Padrino Registrado!</h3>
+            <p className="text-xs text-petuno-secondary-text leading-relaxed">
+              Muchas gracias **{cardName}**. Has registrado un apadrinamiento mensual de **${parseInt(activeAmount).toLocaleString()} COP** para **{pet.name}**. ¡Tu aporte mensual financiará su comida y atención veterinaria en **{pet.shelter}**!
+            </p>
+            <button 
+              onClick={onClose}
+              className="w-full bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-md"
+            >
+              Cerrar
+            </button>
+          </div>
+        )}
+
+      </div>
+    </div>
+  );
+}
+
+function PublicAdoptionsView() {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedSpecies, setSelectedSpecies] = useState('Todos');
+  const [showSpecialNeeds, setShowSpecialNeeds] = useState(false);
+  const [activePetForForm, setActivePetForForm] = useState<any | null>(null);
+  const [activePetForSponsor, setActivePetForSponsor] = useState<any | null>(null);
+
+  const [showQuiz, setShowQuiz] = useState(false);
+  const [quizStep, setQuizStep] = useState(1);
+  const [quizAnswers, setQuizAnswers] = useState<{
+    housing: string;
+    hasOtherPets: string;
+    hoursAlone: string;
+    preferredSpecies: string;
+    activityLevel: string;
+  } | null>(null);
+  const [tempAnswers, setTempAnswers] = useState({
+    housing: 'Apartamento',
+    hasOtherPets: 'No, ninguno',
+    hoursAlone: 'Entre 4 y 8 horas',
+    preferredSpecies: 'Ambos',
+    activityLevel: 'Activo (Juegos diarios, paseos medianos)'
+  });
+
+  const getCompatibilityScore = (pet: any) => {
+    if (!quizAnswers) return null;
+    let score = 70;
+    
+    // Species preference matching
+    if (quizAnswers.preferredSpecies === 'Perro' && pet.species === 'Perro') score += 15;
+    else if (quizAnswers.preferredSpecies === 'Gato' && pet.species === 'Gato') score += 15;
+    else if (quizAnswers.preferredSpecies === 'Ambos') score += 10;
+    
+    // Size and housing matching
+    if (quizAnswers.housing === 'Apartamento' && pet.size === 'Pequeño') score += 10;
+    else if (quizAnswers.housing === 'Apartamento' && pet.size === 'Grande') score -= 15;
+    else if (quizAnswers.housing.includes('finca') && pet.size === 'Grande') score += 12;
+    
+    // Age and activity
+    if (quizAnswers.activityLevel.includes('Activo') && pet.age.includes('meses')) score += 8;
+    else if (quizAnswers.activityLevel.includes('Tranquilo') && pet.age.includes('años')) score += 8;
+
+    // Stable deterministic offset based on name characters
+    const charOffset = pet.name.charCodeAt(0) % 7;
+    score += charOffset;
+    
+    return Math.min(Math.max(score, 60), 99);
+  };
+
+  const adoptablePets = [
+    {
+      id: 'a1',
+      name: 'Lola',
+      species: 'Perro',
+      breed: 'Criolla (Poodle Mix)',
+      age: '6 meses',
+      gender: 'Hembra',
+      size: 'Pequeño',
+      specialNeeds: false,
+      shelter: 'Fundación Patitas Felices',
+      description: 'Lola es extremadamente tierna, juguetona y de tamaño ideal para apartamento. Le encantan los niños.',
+      photo: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=600&auto=format&fit=crop'
+    },
+    {
+      id: 'a2',
+      name: 'Simba',
+      species: 'Gato',
+      breed: 'Común Europeo (Tabby)',
+      age: '1 año',
+      gender: 'Macho',
+      size: 'Mediano',
+      specialNeeds: false,
+      shelter: 'Refugio Huellas de Amor',
+      description: 'Simba es muy cariñoso y hogareño, le encanta ronronear en tu regazo y es muy sociable.',
+      photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=600&auto=format&fit=crop'
+    },
+    {
+      id: 'a3',
+      name: 'Rocco',
+      species: 'Perro',
+      breed: 'Golden Retriever Mix',
+      age: '2 años',
+      gender: 'Macho',
+      size: 'Grande',
+      specialNeeds: true,
+      shelter: 'Fundación Patitas Felices',
+      description: 'Rocco es trípode tras un rescate en la calle, pero corre y juega como cualquier cachorro. Busca una familia cariñosa.',
+      photo: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=600&auto=format&fit=crop'
+    },
+    {
+      id: 'a4',
+      name: 'Kiwi',
+      species: 'Perro',
+      breed: 'Pastor Alemán Mix',
+      age: '8 meses',
+      gender: 'Macho',
+      size: 'Mediano',
+      specialNeeds: false,
+      shelter: 'Refugio Huellas de Amor',
+      description: 'Kiwi es extremadamente activo, inteligente y excelente guardián. Requiere espacio exterior.',
+      photo: 'https://images.unsplash.com/photo-1583511655826-05700d52f4d9?q=80&w=600&auto=format&fit=crop'
+    },
+    {
+      id: 'a5',
+      name: 'Sasha',
+      species: 'Gato',
+      breed: 'Siamesa',
+      age: '3 meses',
+      gender: 'Hembra',
+      size: 'Pequeño',
+      specialNeeds: false,
+      shelter: 'Refugio Huellas de Amor',
+      description: 'Sasha es una cachorra mimada, llena de energía, ideal para convivir con otras mascotas.',
+      photo: 'https://images.unsplash.com/photo-1533738363-b7f9aef128ce?q=80&w=600&auto=format&fit=crop'
+    },
+    {
+      id: 'a6',
+      name: 'Bethoven',
+      species: 'Perro',
+      breed: 'San Bernardo Mix',
+      age: '4 años',
+      gender: 'Macho',
+      size: 'Grande',
+      specialNeeds: false,
+      shelter: 'Refugio Huellas de Amor',
+      description: 'Un gigante noble y tranquilo. Se lleva excelente con gatos y es de temperamento calmado.',
+      photo: 'https://images.unsplash.com/photo-1548199973-03cce0bbc87b?q=80&w=600&auto=format&fit=crop'
+    }
+  ];
+
+  const filteredPets = adoptablePets.filter(pet => {
+    const matchesSearch = pet.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          pet.breed.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          pet.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSpecies = selectedSpecies === 'Todos' || pet.species === selectedSpecies;
+    const matchesNeeds = !showSpecialNeeds || pet.specialNeeds;
+    return matchesSearch && matchesSpecies && matchesNeeds;
+  });
+
+  return (
+    <div className="min-h-screen bg-petuno-background dark:bg-dark-background font-sans pt-28 pb-16 text-left">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
+        
+        {/* Header Title */}
+        <div>
+          <span className="text-[10px] font-extrabold bg-petuno-purple/10 text-petuno-purple px-2.5 py-1 rounded-full uppercase tracking-wider block w-max mb-2">
+            🏡 Adopción Responsable
+          </span>
+          <h1 className="text-3xl font-extrabold text-petuno-text dark:text-dark-text">
+            Encuentra a tu Nuevo Compañero
+          </h1>
+          <p className="text-sm text-petuno-secondary-text mt-1 max-w-xl">
+            Explora las mascotas resguardadas en las fundaciones de Colombia. Adopta de forma responsable o apadrina su manutención y salud.
+          </p>
+        </div>
+
+        {/* Compatibility Matching Wizard Banner */}
+        <div className="bg-gradient-to-r from-petuno-purple/10 to-petuno-coral/10 p-6 rounded-3xl border border-petuno-purple/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="space-y-1 text-left">
+            <h4 className="text-sm font-extrabold text-petuno-purple dark:text-petuno-purple-light flex items-center gap-1.5 uppercase tracking-wider">
+              ❤️ Encuentra tu compañero ideal
+            </h4>
+            <p className="text-xs text-petuno-secondary-text dark:text-dark-secondary-text leading-relaxed">
+              {quizAnswers 
+                ? '¡Test completado! Mostrando porcentajes de compatibilidad personalizados en las tarjetas.'
+                : 'Responde 5 preguntas rápidas y nuestro algoritmo inteligente te recomendará las mascotas más compatibles con tu estilo de vida.'
+              }
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                setQuizStep(1);
+                setShowQuiz(true);
+              }}
+              className="bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold px-4 py-2 rounded-xl text-xs transition-colors shadow-sm whitespace-nowrap"
+            >
+              {quizAnswers ? '🔄 Repetir Test' : '📝 Iniciar Test'}
+            </button>
+            {quizAnswers && (
+              <button
+                onClick={() => setQuizAnswers(null)}
+                className="bg-transparent border border-petuno-border dark:border-petuno-secondary-text/30 hover:bg-petuno-background dark:hover:bg-dark-surface-elevated text-xs font-bold px-3 py-2 rounded-xl"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Search & Filters */}
+        <div className="bg-petuno-surface dark:bg-dark-surface p-4 rounded-3xl border border-petuno-border dark:border-petuno-secondary-text/15 flex flex-col md:flex-row gap-4 items-center justify-between shadow-sm">
+          <div className="relative w-full md:w-80">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-petuno-secondary-text">
+              🔍
+            </span>
+            <input 
+              type="text" 
+              placeholder="Buscar por nombre, raza..." 
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-petuno-background dark:bg-dark-surface-elevated border border-petuno-border dark:border-transparent rounded-2xl pl-10 pr-4 py-2.5 text-xs focus:outline-none focus:border-petuno-purple transition-all placeholder-petuno-muted"
+            />
+          </div>
+
+          <div className="flex flex-wrap gap-2 items-center w-full md:w-auto">
+            <button 
+              onClick={() => setSelectedSpecies('Todos')}
+              className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
+                selectedSpecies === 'Todos' 
+                  ? 'bg-petuno-purple text-white' 
+                  : 'bg-petuno-background dark:bg-dark-surface-elevated text-petuno-secondary-text'
+              }`}
+            >
+              Todos
+            </button>
+            <button 
+              onClick={() => setSelectedSpecies('Perro')}
+              className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
+                selectedSpecies === 'Perro' 
+                  ? 'bg-petuno-purple text-white' 
+                  : 'bg-petuno-background dark:bg-dark-surface-elevated text-petuno-secondary-text'
+              }`}
+            >
+              Perros
+            </button>
+            <button 
+              onClick={() => setSelectedSpecies('Gato')}
+              className={`text-xs font-bold px-4 py-2 rounded-full transition-all ${
+                selectedSpecies === 'Gato' 
+                  ? 'bg-petuno-purple text-white' 
+                  : 'bg-petuno-background dark:bg-dark-surface-elevated text-petuno-secondary-text'
+              }`}
+            >
+              Gatos
+            </button>
+            
+            <div className="w-px h-6 bg-petuno-border dark:bg-petuno-secondary-text/20 mx-2 hidden sm:block"></div>
+            
+            <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-bold text-petuno-secondary-text">
+              <input 
+                type="checkbox" 
+                checked={showSpecialNeeds}
+                onChange={e => setShowSpecialNeeds(e.target.checked)}
+                className="w-4 h-4 rounded text-petuno-purple accent-petuno-purple cursor-pointer"
+              />
+              <span>Necesidades Especiales</span>
+            </label>
+          </div>
+        </div>
+
+        {/* Pets Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredPets.map(pet => {
+            const score = getCompatibilityScore(pet);
+            return (
+              <div key={pet.id} className="bg-petuno-surface dark:bg-dark-surface rounded-3xl overflow-hidden border border-petuno-border dark:border-petuno-secondary-text/10 shadow-sm flex flex-col group">
+                <div className="relative h-56 w-full overflow-hidden bg-petuno-purple-50">
+                  <img 
+                    src={pet.photo} 
+                    alt={pet.name} 
+                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                  />
+                  {pet.specialNeeds && (
+                    <span className="absolute top-4 left-4 bg-petuno-coral text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-sm">
+                      Cuidados Especiales
+                    </span>
+                  )}
+                  {score && (
+                    <span className="absolute top-4 right-4 bg-petuno-purple text-white text-[9.5px] font-extrabold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-md animate-pulse">
+                      💖 {score}% Compatible
+                    </span>
+                  )}
+                </div>
+                <div className="p-6 flex-1 flex flex-col justify-between space-y-4">
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <span className="text-[10px] font-extrabold text-petuno-purple uppercase tracking-wider">{pet.breed} • {pet.gender}</span>
+                        <h3 className="font-extrabold text-lg text-petuno-text dark:text-dark-text mt-0.5">{pet.name}</h3>
+                      </div>
+                      <span className="bg-petuno-background dark:bg-dark-surface-elevated text-petuno-secondary-text text-[10px] font-bold px-2 py-1 rounded-full border border-petuno-border/30">
+                        {pet.age}
+                      </span>
+                    </div>
+                    <p className="text-xs text-petuno-secondary-text dark:text-dark-secondary-text mt-3 leading-relaxed">
+                      {pet.description}
+                    </p>
+                    <p className="text-[10px] text-petuno-muted mt-2 font-semibold flex items-center gap-1.5">
+                      🏠 Albergue: {pet.shelter}
+                      <span className="bg-petuno-purple/10 text-petuno-purple text-[8.5px] font-extrabold px-2 py-0.5 rounded">🛡️ Verificada NIT ✓</span>
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-3 pt-2">
+                    <button 
+                      onClick={() => setActivePetForForm(pet)}
+                      className="bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-all shadow-sm"
+                    >
+                      Adoptar
+                    </button>
+                    <button 
+                      onClick={() => setActivePetForSponsor(pet)}
+                      className="bg-transparent hover:bg-petuno-border/20 border border-petuno-border dark:border-petuno-secondary-text/30 text-petuno-text dark:text-dark-text font-bold py-2.5 rounded-xl text-xs transition-all"
+                    >
+                      Apadrinar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredPets.length === 0 && (
+            <div className="col-span-full bg-petuno-surface dark:bg-dark-surface py-16 rounded-3xl border border-petuno-border text-center">
+              <p className="text-sm text-petuno-secondary-text">No encontramos mascotas con los filtros seleccionados.</p>
+            </div>
+          )}
+        </div>
+
+      </div>
+
+      {activePetForForm && (
+        <AdoptionFormWizardModal 
+          pet={activePetForForm} 
+          onClose={() => setActivePetForForm(null)} 
+        />
+      )}
+
+      {activePetForSponsor && (
+        <SponsorPetModal 
+          pet={activePetForSponsor} 
+          onClose={() => setActivePetForSponsor(null)} 
+        />
+      )}
+
+      {showQuiz && (
+        <div className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm flex items-center justify-center px-4 font-sans text-left">
+          <div className="bg-petuno-surface dark:bg-dark-surface max-w-sm w-full rounded-3xl p-6 border border-petuno-border dark:border-petuno-secondary-text/25 shadow-2xl relative">
+            
+            <button 
+              onClick={() => setShowQuiz(false)} 
+              className="absolute top-4 right-4 text-petuno-secondary-text dark:text-dark-secondary-text hover:bg-petuno-background p-1.5 rounded-lg transition-all"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="space-y-4 pt-2">
+              <div className="text-center">
+                <h3 className="text-sm font-extrabold text-petuno-purple uppercase tracking-wider">
+                  ❤️ Encuentra tu compañero ideal
+                </h3>
+                <p className="text-[10px] text-petuno-secondary-text mt-1">Paso {quizStep} de 5</p>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full bg-petuno-border dark:bg-petuno-secondary-text/20 h-1.5 rounded-full overflow-hidden">
+                <div 
+                  className="bg-petuno-purple h-full transition-all duration-300"
+                  style={{ width: `${quizStep * 20}%` }}
+                ></div>
+              </div>
+
+              {quizStep === 1 && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-petuno-secondary-text uppercase">1. ¿Qué tipo de vivienda tienes?</label>
+                  {['Apartamento', 'Casa con patio pequeño', 'Casa con finca/patio grande'].map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setTempAnswers({ ...tempAnswers, housing: opt })}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs text-left border font-semibold transition-all ${
+                        tempAnswers.housing === opt
+                          ? 'border-petuno-purple bg-petuno-purple text-white shadow-sm'
+                          : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/25 text-petuno-secondary-text'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {quizStep === 2 && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-petuno-secondary-text uppercase">2. ¿Tienes otros animales en el hogar?</label>
+                  {['Sí, perros', 'Sí, gatos', 'Sí, ambos', 'No, ninguno'].map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setTempAnswers({ ...tempAnswers, hasOtherPets: opt })}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs text-left border font-semibold transition-all ${
+                        tempAnswers.hasOtherPets === opt
+                          ? 'border-petuno-purple bg-petuno-purple text-white shadow-sm'
+                          : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/25 text-petuno-secondary-text'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {quizStep === 3 && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-petuno-secondary-text uppercase">3. ¿Cuántas horas al día pasará la mascota sola?</label>
+                  {['Menos de 4 horas', 'Entre 4 y 8 horas', 'Más de 8 horas'].map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setTempAnswers({ ...tempAnswers, hoursAlone: opt })}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs text-left border font-semibold transition-all ${
+                        tempAnswers.hoursAlone === opt
+                          ? 'border-petuno-purple bg-petuno-purple text-white shadow-sm'
+                          : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/25 text-petuno-secondary-text'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {quizStep === 4 && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-petuno-secondary-text uppercase">4. ¿Qué especie estás buscando adoptar?</label>
+                  {['Perro', 'Gato', 'Ambos'].map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setTempAnswers({ ...tempAnswers, preferredSpecies: opt })}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs text-left border font-semibold transition-all ${
+                        tempAnswers.preferredSpecies === opt
+                          ? 'border-petuno-purple bg-petuno-purple text-white shadow-sm'
+                          : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/25 text-petuno-secondary-text'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {quizStep === 5 && (
+                <div className="space-y-3">
+                  <label className="block text-xs font-bold text-petuno-secondary-text uppercase">5. ¿Qué nivel de actividad prefieres para tu mascota?</label>
+                  {['Tranquilo (Paseos cortos, calma)', 'Activo (Juegos diarios, paseos medianos)', 'Muy Enérgico (Deporte, senderismo, correr)'].map(opt => (
+                    <button
+                      key={opt}
+                      type="button"
+                      onClick={() => setTempAnswers({ ...tempAnswers, activityLevel: opt })}
+                      className={`w-full py-2.5 px-4 rounded-xl text-xs text-left border font-semibold transition-all ${
+                        tempAnswers.activityLevel === opt
+                          ? 'border-petuno-purple bg-petuno-purple text-white shadow-sm'
+                          : 'border-petuno-border hover:bg-petuno-background dark:border-petuno-secondary-text/25 text-petuno-secondary-text'
+                      }`}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                {quizStep > 1 ? (
+                  <button
+                    type="button"
+                    onClick={() => setQuizStep(quizStep - 1)}
+                    className="flex-1 bg-transparent hover:bg-petuno-background border border-petuno-border dark:border-petuno-secondary-text/30 font-bold py-2.5 rounded-xl text-xs text-petuno-text dark:text-dark-text text-center transition-all"
+                  >
+                    Atrás
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setShowQuiz(false)}
+                    className="flex-1 bg-transparent hover:bg-petuno-background border border-petuno-border dark:border-petuno-secondary-text/30 font-bold py-2.5 rounded-xl text-xs text-petuno-text dark:text-dark-text text-center transition-all"
+                  >
+                    Cancelar
+                  </button>
+                )}
+                
+                {quizStep < 5 ? (
+                  <button
+                    type="button"
+                    onClick={() => setQuizStep(quizStep + 1)}
+                    className="flex-1 bg-petuno-purple hover:bg-petuno-purple-dark text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-center"
+                  >
+                    Siguiente
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuizAnswers(tempAnswers);
+                      setShowQuiz(false);
+                    }}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white font-bold py-2.5 rounded-xl text-xs transition-colors shadow-sm text-center"
+                  >
+                    Finalizar Test
+                  </button>
+                )}
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activePetForForm && (
+        <AdoptionFormWizardModal 
+          pet={activePetForForm} 
+          onClose={() => setActivePetForForm(null)} 
+        />
+      )}
+
+      {activePetForSponsor && (
+        <SponsorPetModal 
+          pet={activePetForSponsor} 
+          onClose={() => setActivePetForSponsor(null)} 
+        />
+      )}
+    </div>
+  );
+}
+
+// ============================================================================
 // MAIN APP COMPONENT & ROUTING
 // ============================================================================
 
 export default function App() {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [user, setUser] = useState<{ name: string; email: string; phone?: string } | null>(() => {
+  const [user, setUser] = useState<{ name: string; email: string; phone?: string; role?: string } | null>(() => {
     const saved = localStorage.getItem('user');
     return saved ? JSON.parse(saved) : null;
   });
+
+  const [showScannerModal, setShowScannerModal] = useState(false);
+  const [showDonationModal, setShowDonationModal] = useState(false);
+  const [activeScannedPet, setActiveScannedPet] = useState<any | null>(null);
 
   useEffect(() => {
     const savedTheme = localStorage.getItem('theme');
@@ -5154,7 +7705,7 @@ export default function App() {
     }
   };
 
-  const handleLogin = (userData: { name: string; email: string }) => {
+  const handleLogin = (userData: { name: string; email: string; phone?: string; role?: string }) => {
     setUser(userData);
     localStorage.setItem('user', JSON.stringify(userData));
   };
@@ -5172,8 +7723,18 @@ export default function App() {
           path="/" 
           element={
             <>
-              <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
-              <Home />
+              <Header 
+                isDarkMode={isDarkMode} 
+                toggleTheme={toggleTheme} 
+                user={user} 
+                onLogout={handleLogout} 
+                onOpenScanner={() => setShowScannerModal(true)}
+                onOpenDonations={() => setShowDonationModal(true)}
+              />
+              <Home 
+                onOpenScanner={() => setShowScannerModal(true)}
+                onOpenDonations={() => setShowDonationModal(true)}
+              />
             </>
           } 
         />
@@ -5181,7 +7742,14 @@ export default function App() {
           path="/login" 
           element={
             <>
-              <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
+              <Header 
+                isDarkMode={isDarkMode} 
+                toggleTheme={toggleTheme} 
+                user={user} 
+                onLogout={handleLogout} 
+                onOpenScanner={() => setShowScannerModal(true)}
+                onOpenDonations={() => setShowDonationModal(true)}
+              />
               {user ? <Navigate to="/app" replace /> : <Login onLogin={handleLogin} />}
             </>
           } 
@@ -5190,8 +7758,31 @@ export default function App() {
           path="/register" 
           element={
             <>
-              <Header isDarkMode={isDarkMode} toggleTheme={toggleTheme} user={user} onLogout={handleLogout} />
+              <Header 
+                isDarkMode={isDarkMode} 
+                toggleTheme={toggleTheme} 
+                user={user} 
+                onLogout={handleLogout} 
+                onOpenScanner={() => setShowScannerModal(true)}
+                onOpenDonations={() => setShowDonationModal(true)}
+              />
               {user ? <Navigate to="/app" replace /> : <Register onLogin={handleLogin} />}
+            </>
+          } 
+        />
+        <Route 
+          path="/adopcion" 
+          element={
+            <>
+              <Header 
+                isDarkMode={isDarkMode} 
+                toggleTheme={toggleTheme} 
+                user={user} 
+                onLogout={handleLogout} 
+                onOpenScanner={() => setShowScannerModal(true)}
+                onOpenDonations={() => setShowDonationModal(true)}
+              />
+              <PublicAdoptionsView />
             </>
           } 
         />
@@ -5216,6 +7807,77 @@ export default function App() {
         {/* Fallback */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+
+      {showScannerModal && (
+        <QRScannerModal 
+          onClose={() => setShowScannerModal(false)}
+          onScanSuccess={(petId) => {
+            const petsList: Pet[] = [
+              { 
+                id: 'max', 
+                name: 'Max', 
+                species: 'Perro',
+                breed: 'Labrador Retriever', 
+                gender: 'Macho', 
+                status: 'Protegido', 
+                petunoId: 'PTO-82A91X', 
+                photo: 'https://images.unsplash.com/photo-1543466835-00a7907e9de1?q=80&w=600&auto=format&fit=crop', 
+                age: '3 años', 
+                weight: '32 kg', 
+                medicalCritical: 'Alérgico a la penicilina y requiere tratamiento especial para articulaciones.', 
+                emergencyContact: '+57 300 123 4567' 
+              },
+              { 
+                id: 'luna', 
+                name: 'Luna', 
+                species: 'Gato',
+                breed: 'Siamés', 
+                gender: 'Hembra', 
+                status: 'Protegido', 
+                petunoId: 'PTO-93B22Y', 
+                photo: 'https://images.unsplash.com/photo-1514888286974-6c03e2ca1dba?q=80&w=600&auto=format&fit=crop', 
+                age: '2 años', 
+                weight: '4.5 kg', 
+                emergencyContact: '+57 300 123 4567' 
+              },
+              { 
+                id: 'toby', 
+                name: 'Toby', 
+                species: 'Perro',
+                breed: 'Golden Retriever', 
+                gender: 'Macho', 
+                status: 'Protegido', 
+                petunoId: 'PTO-11A99Z', 
+                photo: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?q=80&w=600&auto=format&fit=crop', 
+                age: '1 año', 
+                weight: '28 kg', 
+                emergencyContact: '+57 300 123 4567' 
+              }
+            ];
+            const found = petsList.find(p => p.id === petId);
+            if (found) {
+              setActiveScannedPet(found);
+            }
+          }}
+        />
+      )}
+
+      {showDonationModal && (
+        <DonationGatewayModal 
+          onClose={() => setShowDonationModal(false)}
+        />
+      )}
+
+      {activeScannedPet && (
+        <PublicProfileModal 
+          pet={activeScannedPet}
+          onClose={() => setActiveScannedPet(null)}
+          onReportSighting={() => {
+            alert('¡Gracias! Reporte de avistamiento registrado. El propietario de la mascota recibirá un correo y SMS de inmediato con la geolocalización.');
+            setActiveScannedPet(null);
+          }}
+        />
+      )}
     </Router>
   );
 }
