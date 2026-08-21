@@ -20,10 +20,13 @@ public class AdoptionPet
     [Column("name")]
     public string Name { get; set; } = string.Empty;
 
+    [Column("pet_id")]
+    public Guid? PetId { get; set; }
+
     [Required]
     [MaxLength(10)]
     [Column("species")]
-    public PetSpecies Species { get; set; }
+    public Petuno.Core.Enums.PetSpecies Species { get; set; }
 
     [MaxLength(100)]
     [Column("breed")]

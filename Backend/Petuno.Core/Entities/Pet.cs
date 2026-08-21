@@ -22,7 +22,7 @@ public class Pet
     [Required]
     [MaxLength(10)]
     [Column("species")]
-    public PetSpecies Species { get; set; }
+    public Petuno.Core.Enums.PetSpecies Species { get; set; }
 
     [MaxLength(100)]
     [Column("breed")]
@@ -33,9 +33,8 @@ public class Pet
     [Column("gender")]
     public PetGender Gender { get; set; }
 
-    [MaxLength(50)]
-    [Column("age")]
-    public string? Age { get; set; }
+    [Column("birth_date")]
+    public DateOnly? BirthDate { get; set; }
 
     [MaxLength(50)]
     [Column("color")]
@@ -62,6 +61,10 @@ public class Pet
     [MaxLength(1000)]
     [Column("characteristics")]
     public string? Characteristics { get; set; }
+
+    [MaxLength(3000)]
+    [Column("story")]
+    public string? Story { get; set; }
 
     [Column("created_at")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

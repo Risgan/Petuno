@@ -55,13 +55,16 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(15)")
                         .HasColumnName("status");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_adoption_applications");
 
-                    b.HasIndex("AdoptionPetId");
+                    b.HasIndex("AdoptionPetId")
+                        .HasDatabaseName("ix_adoption_applications_adoption_pet_id");
 
-                    b.HasIndex("ApplicantId");
+                    b.HasIndex("ApplicantId")
+                        .HasDatabaseName("ix_adoption_applications_applicant_id");
 
-                    b.ToTable("adoption_applications");
+                    b.ToTable("adoption_applications", (string)null);
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.AdoptionPet", b =>
@@ -103,6 +106,10 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(100)")
                         .HasColumnName("name");
 
+                    b.Property<Guid?>("PetId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("pet_id");
+
                     b.Property<string>("PhotoUrl")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)")
@@ -140,11 +147,13 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(3000)")
                         .HasColumnName("story");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_adoption_pets");
 
-                    b.HasIndex("FoundationId");
+                    b.HasIndex("FoundationId")
+                        .HasDatabaseName("ix_adoption_pets_foundation_id");
 
-                    b.ToTable("adoption_pets");
+                    b.ToTable("adoption_pets", (string)null);
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.Device", b =>
@@ -185,11 +194,13 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(10)")
                         .HasColumnName("type");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_devices");
 
-                    b.HasIndex("PetId");
+                    b.HasIndex("PetId")
+                        .HasDatabaseName("ix_devices_pet_id");
 
-                    b.ToTable("devices");
+                    b.ToTable("devices", (string)null);
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.Foundation", b =>
@@ -234,16 +245,19 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_foundations");
 
                     b.HasIndex("Nit")
                         .IsUnique()
+                        .HasDatabaseName("ix_foundations_nit")
                         .HasFilter("nit IS NOT NULL");
 
                     b.HasIndex("UserId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_foundations_user_id");
 
-                    b.ToTable("foundations");
+                    b.ToTable("foundations", (string)null);
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.MedicalRecord", b =>
@@ -283,11 +297,131 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("type");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_medical_records");
 
-                    b.HasIndex("PetId");
+                    b.HasIndex("PetId")
+                        .HasDatabaseName("ix_medical_records_pet_id");
 
-                    b.ToTable("medical_records");
+                    b.ToTable("medical_records", (string)null);
+                });
+
+            modelBuilder.Entity("Petuno.Core.Entities.ModuleConfig", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<bool>("EnabledForAdmin")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled_for_admin");
+
+                    b.Property<bool>("EnabledForFoundation")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled_for_foundation");
+
+                    b.Property<bool>("EnabledForOwner")
+                        .HasColumnType("boolean")
+                        .HasColumnName("enabled_for_owner");
+
+                    b.Property<string>("ModuleName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("module_name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_module_configs");
+
+                    b.HasIndex("ModuleName")
+                        .IsUnique()
+                        .HasDatabaseName("ix_module_configs_module_name");
+
+                    b.ToTable("module_configs", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-1111-1111-1111-111111111111"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "SOS"
+                        },
+                        new
+                        {
+                            Id = new Guid("22222222-2222-2222-2222-222222222222"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Adopciones"
+                        },
+                        new
+                        {
+                            Id = new Guid("33333333-3333-3333-3333-333333333333"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Mascotas Perdidas"
+                        },
+                        new
+                        {
+                            Id = new Guid("44444444-4444-4444-4444-444444444444"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = false,
+                            EnabledForOwner = true,
+                            ModuleName = "Dispositivos"
+                        },
+                        new
+                        {
+                            Id = new Guid("55555555-5555-5555-5555-555555555555"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Veterinarias"
+                        },
+                        new
+                        {
+                            Id = new Guid("66666666-6666-6666-6666-666666666666"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Comunidad"
+                        },
+                        new
+                        {
+                            Id = new Guid("77777777-7777-7777-7777-777777777777"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Dashboard"
+                        },
+                        new
+                        {
+                            Id = new Guid("88888888-8888-8888-8888-888888888888"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Mis Mascotas"
+                        },
+                        new
+                        {
+                            Id = new Guid("99999999-9999-9999-9999-999999999999"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Notificaciones"
+                        },
+                        new
+                        {
+                            Id = new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
+                            EnabledForAdmin = true,
+                            EnabledForFoundation = true,
+                            EnabledForOwner = true,
+                            ModuleName = "Configuracion"
+                        });
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.Pet", b =>
@@ -298,10 +432,9 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnName("id")
                         .HasDefaultValueSql("gen_random_uuid()");
 
-                    b.Property<string>("Age")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("age");
+                    b.Property<DateOnly?>("BirthDate")
+                        .HasColumnType("date")
+                        .HasColumnName("birth_date");
 
                     b.Property<string>("Breed")
                         .HasMaxLength(100)
@@ -368,14 +501,88 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(15)")
                         .HasColumnName("status");
 
-                    b.HasKey("Id");
+                    b.Property<string>("Story")
+                        .HasMaxLength(3000)
+                        .HasColumnType("character varying(3000)")
+                        .HasColumnName("story");
 
-                    b.HasIndex("OwnerId");
+                    b.HasKey("Id")
+                        .HasName("pk_pets");
+
+                    b.HasIndex("OwnerId")
+                        .HasDatabaseName("ix_pets_owner_id");
 
                     b.HasIndex("PetunoId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_pets_petuno_id");
 
-                    b.ToTable("pets");
+                    b.ToTable("pets", (string)null);
+                });
+
+            modelBuilder.Entity("Petuno.Core.Entities.PetSpecies", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("name");
+
+                    b.HasKey("Id")
+                        .HasName("pk_pet_species");
+
+                    b.HasIndex("Name")
+                        .IsUnique()
+                        .HasDatabaseName("ix_pet_species_name");
+
+                    b.ToTable("pet_species", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555551"),
+                            Name = "Perro"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555552"),
+                            Name = "Gato"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555553"),
+                            Name = "Ave"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555554"),
+                            Name = "Conejo"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555555"),
+                            Name = "Caballo"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555556"),
+                            Name = "Vaca"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555557"),
+                            Name = "Cerdo"
+                        },
+                        new
+                        {
+                            Id = new Guid("11111111-2222-3333-4444-555555555558"),
+                            Name = "Otro"
+                        });
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.PrivacySettings", b =>
@@ -418,12 +625,14 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("show_name");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_privacy_settings");
 
                     b.HasIndex("PetId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_privacy_settings_pet_id");
 
-                    b.ToTable("privacy_settings");
+                    b.ToTable("privacy_settings", (string)null);
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.Sighting", b =>
@@ -470,11 +679,13 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnName("timestamp")
                         .HasDefaultValueSql("now()");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_sightings");
 
-                    b.HasIndex("PetId");
+                    b.HasIndex("PetId")
+                        .HasDatabaseName("ix_sightings_pet_id");
 
-                    b.ToTable("sightings");
+                    b.ToTable("sightings", (string)null);
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.User", b =>
@@ -524,12 +735,14 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .HasColumnType("character varying(20)")
                         .HasColumnName("role");
 
-                    b.HasKey("Id");
+                    b.HasKey("Id")
+                        .HasName("pk_users");
 
                     b.HasIndex("Email")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasDatabaseName("ix_users_email");
 
-                    b.ToTable("users");
+                    b.ToTable("users", (string)null);
                 });
 
             modelBuilder.Entity("Petuno.Core.Entities.AdoptionApplication", b =>
@@ -538,13 +751,15 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .WithMany("Applications")
                         .HasForeignKey("AdoptionPetId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_adoption_applications_adoption_pets_adoption_pet_id");
 
                     b.HasOne("Petuno.Core.Entities.User", "Applicant")
                         .WithMany("AdoptionApplications")
                         .HasForeignKey("ApplicantId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_adoption_applications_users_applicant_id");
 
                     b.Navigation("AdoptionPet");
 
@@ -557,7 +772,8 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .WithMany("AdoptionPets")
                         .HasForeignKey("FoundationId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_adoption_pets_foundations_foundation_id");
 
                     b.Navigation("Foundation");
                 });
@@ -568,7 +784,8 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .WithMany("Devices")
                         .HasForeignKey("PetId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_devices_pets_pet_id");
 
                     b.Navigation("Pet");
                 });
@@ -579,7 +796,8 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .WithOne("Foundation")
                         .HasForeignKey("Petuno.Core.Entities.Foundation", "UserId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_foundations_users_user_id");
 
                     b.Navigation("User");
                 });
@@ -590,7 +808,8 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .WithMany("MedicalRecords")
                         .HasForeignKey("PetId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_medical_records_pets_pet_id");
 
                     b.Navigation("Pet");
                 });
@@ -600,7 +819,8 @@ namespace Petuno.Infrastructure.Data.Migrations
                     b.HasOne("Petuno.Core.Entities.User", "Owner")
                         .WithMany("Pets")
                         .HasForeignKey("OwnerId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_pets_users_owner_id");
 
                     b.Navigation("Owner");
                 });
@@ -611,7 +831,8 @@ namespace Petuno.Infrastructure.Data.Migrations
                         .WithOne("PrivacySettings")
                         .HasForeignKey("Petuno.Core.Entities.PrivacySettings", "PetId")
                         .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .IsRequired()
+                        .HasConstraintName("fk_privacy_settings_pets_pet_id");
 
                     b.Navigation("Pet");
                 });
@@ -621,7 +842,8 @@ namespace Petuno.Infrastructure.Data.Migrations
                     b.HasOne("Petuno.Core.Entities.Pet", "Pet")
                         .WithMany("Sightings")
                         .HasForeignKey("PetId")
-                        .OnDelete(DeleteBehavior.SetNull);
+                        .OnDelete(DeleteBehavior.SetNull)
+                        .HasConstraintName("fk_sightings_pets_pet_id");
 
                     b.Navigation("Pet");
                 });

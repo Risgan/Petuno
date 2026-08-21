@@ -16,6 +16,8 @@ public class PetunoDbContext : DbContext
     public DbSet<Sighting> Sightings => Set<Sighting>();
     public DbSet<AdoptionPet> AdoptionPets => Set<AdoptionPet>();
     public DbSet<AdoptionApplication> AdoptionApplications => Set<AdoptionApplication>();
+    public DbSet<ModuleConfig> ModuleConfigs => Set<ModuleConfig>();
+    public DbSet<PetSpecies> PetSpecies => Set<PetSpecies>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
